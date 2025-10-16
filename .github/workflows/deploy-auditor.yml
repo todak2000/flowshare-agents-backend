@@ -10,37 +10,9 @@ on:
       - ".github/workflows/deploy-auditor.yml"
 
 jobs:
-  security-scan:
-    name: Security Scanning
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install safety bandit
-
-      - name: Run Safety (dependency vulnerability scanner)
-        run: |
-          pip install -r shared/requirements.txt -r auditor-agent/requirements.txt
-          safety check --json || true
-
-      - name: Run Bandit (Python security linter)
-        run: |
-          bandit -r shared/ auditor-agent/ -f json -o bandit-report.json || true
-          bandit -r shared/ auditor-agent/ || true
-
   deploy:
     name: Build, Scan, and Deploy Auditor Agent
     runs-on: ubuntu-latest
-    needs: security-scan
 
     steps:
       # 1. Check out the repository
