@@ -1,90 +1,139 @@
 """
 Auditor Agent - FastAPI Application
-Receives HTTP requests from Cloud Function triggers
+Production-grade microservice with modular architecture
+
+KISS principle: Simple, clean FastAPI setup
+DRY principle: Reusable middleware and routes
+Separation of Concerns: Infrastructure (this file) vs Business Logic (agent.py)
 """
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Dict, Any
-import asyncio
-from agent import auditor_agent
-from datetime import datetime
-
-import sys
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 import os
+import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from shared.logger import logger
 
-# Initialize FastAPI
+# Import modular components
+from middleware import (
+    add_security_headers,
+    add_request_tracking,
+    rate_limit_middleware,
+    timeout_middleware,
+    ALLOWED_ORIGINS
+)
+from routes import health_router, validation_router
+
+
+# ============================================================================
+# LIFECYCLE MANAGEMENT (Lifespan)
+# ============================================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan context manager for startup and shutdown events
+    Replaces deprecated @app.on_event()
+    """
+    # Startup
+    logger.info("Auditor Agent starting up...")
+    yield
+    # Shutdown
+    logger.info("Auditor Agent shutting down gracefully")
+
+
+# Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Auditor Agent",
-    description="Data validation agent for FlowShare",
-    version="1.0.0"
+    description="Production-grade data validation agent for FlowShare",
+    version="2.0.0",
+    docs_url="/docs" if os.getenv("ENVIRONMENT") == "development" else None,
+    redoc_url=None,
+    lifespan=lifespan
 )
 
-# CORS
+# ============================================================================
+# MIDDLEWARE CONFIGURATION
+# ============================================================================
+
+# 1. CORS Protection (restrict to specific origins)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
+    expose_headers=["X-Request-ID", "X-RateLimit-Remaining"],
+    max_age=3600,
 )
 
+# 2. Response Compression
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-class ValidationRequest(BaseModel):
-    """Request payload from Cloud Function"""
-    entry_id: str
-    entry_data: Dict[str, Any]
+# 3. Security Headers
+app.middleware("http")(add_security_headers)
 
+# 4. Request Tracking (request ID + timing)
+app.middleware("http")(add_request_tracking)
 
-@app.get("/")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "agent": "Auditor Agent",
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat()
-    }
+# 5. Rate Limiting
+app.middleware("http")(rate_limit_middleware)
 
+# 6. Timeout Management
+app.middleware("http")(timeout_middleware)
 
-@app.post("/validate")
-async def validate_entry(request: ValidationRequest):
+# ============================================================================
+# ROUTES
+# ============================================================================
+
+# Health check routes
+app.include_router(health_router)
+
+# Validation routes
+app.include_router(validation_router)
+
+# ============================================================================
+# EXCEPTION HANDLERS
+# ============================================================================
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
     """
-    Validate a production entry
-    Called by Cloud Function trigger
+    Global exception handler for uncaught exceptions
+
+    Ensures no exception crashes the service
     """
-    try:
-        logger.info(f"Received validation request for entry: {request.entry_id}")
+    request_id = getattr(request.state, 'request_id', 'unknown')
+    logger.error(
+        "Unhandled exception",
+        request_id=request_id,
+        error=str(exc),
+        error_type=type(exc).__name__,
+        path=request.url.path
+    )
 
-        # Add ID to entry data
-        entry_data = request.entry_data
-        entry_data['id'] = request.entry_id
-
-        # Validate
-        result = await auditor_agent.validate_entry(entry_data)
-
-        return {
-            "success": True,
-            "entry_id": request.entry_id,
-            "status": result.status,
-            "flagged": result.flagged,
-            "confidence_score": result.confidence_score,
-            "issues_count": len(result.issues)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal server error",
+            "message": "An unexpected error occurred",
+            "request_id": request_id
         }
+    )
 
-    except Exception as e:
-        logger.error(f"Validation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/health")
-async def health():
-    """Kubernetes/Cloud Run health check"""
-    return {"status": "healthy"}
-
+# ============================================================================
+# APPLICATION ENTRY POINT
+# ============================================================================
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8081)
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8081,
+        log_level="info",
+        access_log=True,
+        timeout_keep_alive=65
+    )
