@@ -1,0 +1,76 @@
+name: Deploy Auditor Agent to Cloud Run
+
+on:
+    push:
+        branches:
+            - main # Deploys when pushing to the main branch
+        paths:
+            - 'flowshare-agents-backend/auditor-agent/**'
+            - 'flowshare-agents-backend/shared/**'
+            - 'flowshare-agents-backend/.github/workflows/deploy-auditor.yml'
+
+jobs:
+    deploy:
+        name: Build, Push, and Deploy Auditor Agent
+        runs-on: ubuntu-latest
+
+        steps:
+            # 1. Check out the repository
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            # 2. Authenticate to Google Cloud
+            - name: Authenticate to Google Cloud
+              id: auth
+              uses: google-github-actions/auth@v2
+              with:
+                  credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+            # 3. Set up the Google Cloud SDK (gcloud)
+            - name: Set up Cloud SDK
+              uses: google-github-actions/setup-gcloud@v2
+              with:
+                  project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+            # 4. Configure Docker to push to Google Artifact Registry
+            - name: Authorize Docker push
+              run: gcloud auth configure-docker "europe-west1-docker.pkg.dev" --quiet
+
+            # 5. Build the Docker image
+            - name: Build Docker image
+              run: |
+                  cd flowshare-agents-backend
+                  docker build \
+                    -f auditor-agent/Dockerfile \
+                    -t "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:${{ github.sha }}" \
+                    -t "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:latest" \
+                    .
+
+            # 6. Push the Docker image to Artifact Registry
+            - name: Push Docker image
+              run: |
+                  docker push "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:${{ github.sha }}"
+                  docker push "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:latest"
+
+            # 7. Deploy the container image to Cloud Run
+            - name: Deploy to Cloud Run
+              id: deploy
+              uses: google-github-actions/deploy-cloudrun@v2
+              with:
+                  service: auditor-agent
+                  region: "europe-west1"
+                  image: "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:${{ github.sha }}"
+                  flags: |
+                      --memory=512Mi
+                      --cpu=1
+                      --timeout=60
+                      --min-instances=0
+                      --max-instances=10
+                      --concurrency=50
+                      --port=8081
+                      --allow-unauthenticated
+                      --set-env-vars GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=europe-west1
+
+            # 8. Output the URL of the deployed service
+            - name: Show Deployed URL
+              run: echo "Auditor Agent deployed to ${{ steps.deploy.outputs.url }}"

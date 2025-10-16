@@ -1,0 +1,11 @@
+__pycache__/
+env
+.env
+# Firebase credentials - NEVER commit these
+firebase_credentials.json
+*-firebase-adminsdk-*.json
+*.sh
+*.md
+venv/
+note.txt
+serviceAccountKey.jsonvenv/

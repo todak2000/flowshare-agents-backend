@@ -1,0 +1,11 @@
+# Google Cloud & AI
+google-cloud-firestore>=2.19.0
+firebase-admin>=6.0.0
+google-genai>=1.0.0
+python-dotenv
+# Data validation
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Utilities
+python-dotenv>=1.0.0
