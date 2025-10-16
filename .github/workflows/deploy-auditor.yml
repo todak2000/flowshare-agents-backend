@@ -1,4 +1,4 @@
-name: Deploy Auditor Agent to Cloud Run
+name: Deploy Auditor Agent to Cloud Run (Production-Grade)
 
 on:
   push:
@@ -10,9 +10,40 @@ on:
       - ".github/workflows/deploy-auditor.yml"
 
 jobs:
-  deploy:
-    name: Build, Push, and Deploy Auditor Agent
+  security-scan:
+    name: Security Scanning
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: flowshare-agents-backend
+        run: |
+          pip install --upgrade pip
+          pip install safety bandit
+
+      - name: Run Safety (dependency vulnerability scanner)
+        working-directory: flowshare-agents-backend
+        run: |
+          pip install -r shared/requirements.txt -r auditor-agent/requirements.txt
+          safety check --json || true
+
+      - name: Run Bandit (Python security linter)
+        working-directory: flowshare-agents-backend
+        run: |
+          bandit -r shared/ auditor-agent/ -f json -o bandit-report.json || true
+          bandit -r shared/ auditor-agent/ || true
+
+  deploy:
+    name: Build, Scan, and Deploy Auditor Agent
+    runs-on: ubuntu-latest
+    needs: security-scan
 
     steps:
       # 1. Check out the repository
@@ -43,15 +74,33 @@ jobs:
             -f auditor-agent/Dockerfile \
             -t "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:${{ github.sha }}" \
             -t "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:latest" \
+            --label "git-commit=${{ github.sha }}" \
+            --label "build-date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             .
 
-      # 6. Push the Docker image to Artifact Registry
+      # 6. Scan Docker image for vulnerabilities (using Trivy)
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:${{ github.sha }}"
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      # 7. Push the Docker image to Artifact Registry
       - name: Push Docker image
         run: |
           docker push "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:${{ github.sha }}"
           docker push "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:latest"
 
-      # 7. Deploy the container image to Cloud Run
+      # 8. Deploy the container image to Cloud Run with production settings
       - name: Deploy to Cloud Run
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v2
@@ -60,16 +109,34 @@ jobs:
           region: "europe-west1"
           image: "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:${{ github.sha }}"
           flags: |
-            --memory=512Mi
-            --cpu=1
+            --memory=1Gi
+            --cpu=2
             --timeout=60
             --min-instances=0
-            --max-instances=10
-            --concurrency=50
+            --max-instances=20
+            --concurrency=100
             --port=8081
             --allow-unauthenticated
-            --set-env-vars GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=europe-west1
+            --cpu-throttling
+            --execution-environment=gen2
+            --service-account=${{ secrets.CLOUD_RUN_SA_EMAIL }}
+            --set-env-vars GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=europe-west1,ENVIRONMENT=production
 
-      # 8. Output the URL of the deployed service
+      # 9. Output the URL of the deployed service
       - name: Show Deployed URL
-        run: echo "Auditor Agent deployed to ${{ steps.deploy.outputs.url }}"
+        run: |
+          echo "✅ Auditor Agent deployed successfully!"
+          echo "🔗 URL: ${{ steps.deploy.outputs.url }}"
+          echo "📦 Image: europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/auditor-agent:${{ github.sha }}"
+
+      # 10. Health check the deployed service
+      - name: Health check deployed service
+        run: |
+          sleep 10
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.deploy.outputs.url }}/health")
+          if [ $response -eq 200 ]; then
+            echo "✅ Health check passed!"
+          else
+            echo "❌ Health check failed with status code: $response"
+            exit 1
+          fi

@@ -4,6 +4,9 @@ FROM python:3.11-slim AS builder
 # Set working directory
 WORKDIR /app
 
+# COPY the shared directory FIRST
+COPY shared/ ./shared/
+
 # Install dependencies in a separate layer for better caching
 COPY auditor-agent/requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt

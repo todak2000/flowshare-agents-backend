@@ -4,8 +4,13 @@ Structured logging for all agents
 import logging
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
+
+
+def utc_now() -> datetime:
+    """Get timezone-aware UTC datetime"""
+    return datetime.now(timezone.utc)
 
 
 class StructuredLogger:
@@ -25,7 +30,7 @@ class StructuredLogger:
 
         def format(self, record: logging.LogRecord) -> str:
             log_data = {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
                 "severity": record.levelname,
                 "message": record.getMessage(),
                 "logger": record.name,
