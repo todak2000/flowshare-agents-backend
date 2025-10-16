@@ -2,17 +2,19 @@
 Anomaly Detector - Detects statistical anomalies using historical data
 KISS principle: Does one thing - statistical anomaly detection
 """
+from typing import List
+import statistics
+import asyncio
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+# Add parent directory to path for shared module imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from shared.models import ProductionEntry, ValidationIssue, SeverityLevel
 from shared.config import config
 from shared.firestore_client import firestore_client
 from shared.logger import logger
-from typing import List
-import statistics
-import asyncio
 
 
 class AnomalyDetector:

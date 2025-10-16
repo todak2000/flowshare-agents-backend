@@ -3,14 +3,16 @@ Validation Routes
 Handles production entry validation requests
 KISS principle: Validation endpoint only
 """
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, Field, validator
 from typing import Dict, Any
 import asyncio
+import sys
+import os
+
+# Add parent directory to path for module imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from agent import auditor_agent
 from shared.logger import logger
 

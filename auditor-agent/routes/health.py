@@ -3,12 +3,14 @@ Health Check Routes
 Provides health status and dependency validation
 KISS principle: Health checking only
 """
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
+import sys
+import os
+
+# Add parent directory to path for shared module imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from utils import utc_now
 
 router = APIRouter(tags=["Health"])

@@ -2,13 +2,15 @@
 Range Validator - Validates production data against configured ranges
 KISS principle: Does one thing - checks if values are within acceptable ranges
 """
+from typing import List
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+# Add parent directory to path for shared module imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from shared.models import ProductionEntry, ValidationIssue, SeverityLevel
 from shared.config import config
-from typing import List
 
 
 class RangeValidator:

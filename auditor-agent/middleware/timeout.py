@@ -3,13 +3,15 @@ Timeout Middleware
 Enforces request timeout to prevent resource exhaustion
 KISS principle: Timeout handling only
 """
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
 import asyncio
+import sys
+import os
+
+# Add parent directory to path for shared module imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from shared.logger import logger
 
 # Timeout configuration
