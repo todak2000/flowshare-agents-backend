@@ -17,10 +17,12 @@ from shared.logger import logger
 from typing import Dict, Any
 import asyncio
 
-# Import modular components
-from cache import SimpleCache
+# Import shared components
+from shared.cache import SimpleCache
+from shared.utils import utc_now
+
+# Import agent-specific validators
 from validators import RangeValidator, AnomalyDetector
-from utils import utc_now
 
 
 class AuditorAgent:

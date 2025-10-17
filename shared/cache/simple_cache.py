@@ -1,6 +1,13 @@
 """
 Simple in-memory cache with TTL
-Provides caching functionality for historical data queries
+Shared by all agents for caching data queries
+
+Usage:
+    from shared.cache import SimpleCache
+
+    cache = SimpleCache(max_size=100)
+    cache.set("key", data, ttl_seconds=300)
+    value = cache.get("key")
 """
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone, timedelta
@@ -32,7 +39,7 @@ class CacheEntry:
 
 class SimpleCache:
     """
-    Simple in-memory cache with TTL for historical data
+    Simple in-memory cache with TTL
 
     Features:
     - Time-based expiration (TTL)
@@ -40,6 +47,11 @@ class SimpleCache:
     - Thread-safe for single-process use
 
     Note: This is per-instance cache. For distributed caching, use Redis.
+
+    Example:
+        cache = SimpleCache(max_size=100)
+        cache.set("partner_ownership", data, ttl_seconds=600)
+        data = cache.get("partner_ownership")
     """
 
     def __init__(self, max_size: int = 100):

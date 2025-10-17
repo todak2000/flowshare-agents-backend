@@ -1,76 +1,80 @@
 name: Deploy Accountant Agent to Cloud Run
 
 on:
-    push:
-        branches:
-            - main # Deploys when pushing to the main branch
-        paths:
-            - 'flowshare-agents-backend/accountant-agent/**'
-            - 'flowshare-agents-backend/shared/**'
-            - 'flowshare-agents-backend/.github/workflows/deploy-accountant.yml'
+  push:
+    branches:
+      - main # Deploys when pushing to the main branch
+    paths:
+      - "accountant-agent/**"
+      - "shared/**"
+      - ".github/workflows/deploy-accountant.yml"
 
 jobs:
-    deploy:
-        name: Build, Push, and Deploy Accountant Agent
-        runs-on: ubuntu-latest
+  deploy:
+    name: Build, Push, and Deploy Accountant Agent
+    runs-on: ubuntu-latest
 
-        steps:
-            # 1. Check out the repository
-            - name: Checkout repository
-              uses: actions/checkout@v4
+    steps:
+      # 1. Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            # 2. Authenticate to Google Cloud
-            - name: Authenticate to Google Cloud
-              id: auth
-              uses: google-github-actions/auth@v2
-              with:
-                  credentials_json: ${{ secrets.GCP_SA_KEY }}
+      # 2. Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-            # 3. Set up the Google Cloud SDK (gcloud)
-            - name: Set up Cloud SDK
-              uses: google-github-actions/setup-gcloud@v2
-              with:
-                  project_id: ${{ secrets.GCP_PROJECT_ID }}
+      # 3. Set up the Google Cloud SDK (gcloud)
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-            # 4. Configure Docker to push to Google Artifact Registry
-            - name: Authorize Docker push
-              run: gcloud auth configure-docker "europe-west1-docker.pkg.dev" --quiet
+      # 4. Configure Docker to push to Google Artifact Registry
+      - name: Authorize Docker push
+        run: gcloud auth configure-docker "europe-west1-docker.pkg.dev" --quiet
 
-            # 5. Build the Docker image
-            - name: Build Docker image
-              run: |
-                  cd flowshare-agents-backend
-                  docker build \
-                    -f accountant-agent/Dockerfile \
-                    -t "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/accountant-agent:${{ github.sha }}" \
-                    -t "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/accountant-agent:latest" \
-                    .
+      # 5. Build the Docker image
+      - name: Build Docker image
+        run: |
+          docker build \
+            -f accountant-agent/Dockerfile \
+            -t "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/accountant-agent:${{ github.sha }}" \
+            -t "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/accountant-agent:latest" \
+            --label "git-commit=${{ github.sha }}" \
+            --label "build-date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            .
 
-            # 6. Push the Docker image to Artifact Registry
-            - name: Push Docker image
-              run: |
-                  docker push "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/accountant-agent:${{ github.sha }}"
-                  docker push "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/accountant-agent:latest"
+      # 6. Push the Docker image to Artifact Registry
+      - name: Push Docker image
+        run: |
+          docker push "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/accountant-agent:${{ github.sha }}"
+          docker push "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/accountant-agent:latest"
 
-            # 7. Deploy the container image to Cloud Run
-            - name: Deploy to Cloud Run
-              id: deploy
-              uses: google-github-actions/deploy-cloudrun@v2
-              with:
-                  service: accountant-agent
-                  region: "europe-west1"
-                  image: "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/accountant-agent:${{ github.sha }}"
-                  flags: |
-                      --memory=512Mi
-                      --cpu=1
-                      --timeout=60
-                      --min-instances=0
-                      --max-instances=10
-                      --concurrency=50
-                      --port=8082
-                      --allow-unauthenticated
-                      --set-env-vars GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=europe-west1
+      # 7. Deploy the container image to Cloud Run
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: accountant-agent
+          region: "europe-west1"
+          image: "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/accountant-agent:${{ github.sha }}"
+          flags: |
+            --memory=1Gi
+            --cpu=2
+            --timeout=60
+            --min-instances=0
+            --max-instances=20
+            --concurrency=50
+            --port=8082
+            --allow-unauthenticated
+            --cpu-throttling
+            --execution-environment=gen2
+            --service-account=${{ secrets.CLOUD_RUN_SA_EMAIL }}
+            --set-env-vars GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=europe-west1
 
-            # 8. Output the URL of the deployed service
-            - name: Show Deployed URL
-              run: echo "Accountant Agent deployed to ${{ steps.deploy.outputs.url }}"
+      # 8. Output the URL of the deployed service
+      - name: Show Deployed URL
+        run: echo "Accountant Agent deployed to ${{ steps.deploy.outputs.url }}"

@@ -1,9 +1,9 @@
 """
-Auditor Agent - FastAPI Application
+Accountant Agent - FastAPI Application
 Production-grade microservice with modular architecture
 
 KISS principle: Simple, clean FastAPI setup
-DRY principle: Reusable middleware and routes
+DRY principle: Reusable shared components
 Separation of Concerns: Infrastructure (this file) vs Business Logic (agent.py)
 """
 from fastapi import FastAPI, Request
@@ -28,8 +28,8 @@ from shared.middleware import (
 # Import shared health check route
 from shared.routes import create_health_router
 
-# Import agent-specific validation route
-from routes import validation_router
+# Import agent-specific allocation route
+from routes import allocation_router
 
 
 # ============================================================================
@@ -43,17 +43,17 @@ async def lifespan(app: FastAPI):
     Replaces deprecated @app.on_event()
     """
     # Startup
-    logger.info("Auditor Agent starting up...")
+    logger.info("Accountant Agent starting up...")
     yield
     # Shutdown
-    logger.info("Auditor Agent shutting down gracefully")
+    logger.info("Accountant Agent shutting down gracefully")
 
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
-    title="Auditor Agent",
-    description="Production-grade data validation agent for FlowShare",
-    version="2.0.0",
+    title="Accountant Agent",
+    description="Production-grade allocation calculation agent for FlowShare",
+    version="1.0.0",
     docs_url="/docs" if os.getenv("ENVIRONMENT") == "development" else None,
     redoc_url=None,
     lifespan=lifespan
@@ -94,20 +94,20 @@ app.middleware("http")(timeout_middleware)
 # ============================================================================
 
 # Health check routes (using shared router factory)
-def get_auditor_agent():
-    """Get auditor agent instance for health checks"""
-    from agent import auditor_agent
-    return auditor_agent
+def get_accountant_agent():
+    """Get accountant agent instance for health checks"""
+    from agent import accountant_agent
+    return accountant_agent
 
 health_router = create_health_router(
-    agent_name="Auditor Agent",
-    version="2.0.0",
-    agent_getter=get_auditor_agent
+    agent_name="Accountant Agent",
+    version="1.0.0",
+    agent_getter=get_accountant_agent
 )
 app.include_router(health_router)
 
-# Validation routes (agent-specific)
-app.include_router(validation_router)
+# Allocation routes (agent-specific)
+app.include_router(allocation_router)
 
 # ============================================================================
 # EXCEPTION HANDLERS
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8081,
+        port=8082,
         log_level="info",
         access_log=True,
         timeout_keep_alive=65

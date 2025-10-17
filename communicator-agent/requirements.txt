@@ -2,5 +2,8 @@
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 
+# HTTP client for webhooks
+httpx>=0.27.0
+
 # Shared dependencies (installed from parent)
 -r ../shared/requirements.txt
