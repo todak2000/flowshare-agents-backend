@@ -19,6 +19,18 @@ class SeverityLevel(str, Enum):
     HIGH = "high"
 
 
+class NotificationStatus(str, Enum):
+    PENDING = "pending"
+    SENT = "sent"
+    FAILED = "failed"
+
+
+class NotificationType(str, Enum):
+    EMAIL = "email"
+    SMS = "sms"
+    WEBHOOK = "webhook"
+
+
 class ProductionEntry(BaseModel):
     """Production entry data model"""
     id: Optional[str] = None
@@ -88,6 +100,15 @@ class PartnerAllocation(BaseModel):
     entries_count: Optional[int] = 0
 
 
+class AllocationResult(BaseModel):
+    """Result from Accountant Agent"""
+    receipt_id: str
+    allocations: List[Dict[str, Any]]  # List of allocation dictionaries
+    total_allocated: float
+    validation_status: bool = True
+    timestamp: str
+
+
 class ReconciliationRun(BaseModel):
     """Reconciliation run result"""
     id: Optional[str] = None
@@ -104,15 +125,16 @@ class ReconciliationRun(BaseModel):
 
 
 class Notification(BaseModel):
-    """Notification for stakeholders"""
+    """Notification for stakeholders (Communicator Agent)"""
     id: Optional[str] = None
-    recipient_role: str  # "jv_coordinator", "partner", "field_operator"
-    recipient_id: Optional[str] = None
-    title: str
-    message: str
-    notification_type: str  # "reconciliation_complete", "data_flagged", etc.
-    related_document_id: Optional[str] = None
-    read: bool = False
+    type: NotificationType  # email, sms, webhook
+    recipient: str  # email address, phone number, or webhook URL
+    subject: Optional[str] = None  # for email
+    body: str  # message content or payload
+    status: NotificationStatus = NotificationStatus.PENDING
+    sent_at: Optional[str] = None
+    error_message: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None  # additional data (cc, bcc, headers, etc.)
     created_at: Optional[str] = None
 
 

@@ -1,5 +1,5 @@
 """
-Utility functions for Auditor Agent
+Shared utility functions for all agents
 """
 from .datetime_utils import utc_now
 

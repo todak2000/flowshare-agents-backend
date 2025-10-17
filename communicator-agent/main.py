@@ -1,5 +1,5 @@
 """
-Auditor Agent - FastAPI Application
+Communicator Agent - FastAPI Application
 Production-grade microservice with modular architecture
 
 KISS principle: Simple, clean FastAPI setup
@@ -28,8 +28,8 @@ from shared.middleware import (
 # Import shared health check route
 from shared.routes import create_health_router
 
-# Import agent-specific validation route
-from routes import validation_router
+# Import agent-specific notification route
+from routes import notification_router
 
 
 # ============================================================================
@@ -43,16 +43,16 @@ async def lifespan(app: FastAPI):
     Replaces deprecated @app.on_event()
     """
     # Startup
-    logger.info("Auditor Agent starting up...")
+    logger.info("Communicator Agent starting up...")
     yield
     # Shutdown
-    logger.info("Auditor Agent shutting down gracefully")
+    logger.info("Communicator Agent shutting down gracefully")
 
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
-    title="Auditor Agent",
-    description="Production-grade data validation agent for FlowShare",
+    title="Communicator Agent",
+    description="Production-grade notification agent for FlowShare",
     version="2.0.0",
     docs_url="/docs" if os.getenv("ENVIRONMENT") == "development" else None,
     redoc_url=None,
@@ -94,20 +94,20 @@ app.middleware("http")(timeout_middleware)
 # ============================================================================
 
 # Health check routes (using shared router factory)
-def get_auditor_agent():
-    """Get auditor agent instance for health checks"""
-    from agent import auditor_agent
-    return auditor_agent
+def get_communicator_agent():
+    """Get communicator agent instance for health checks"""
+    from agent import communicator_agent
+    return communicator_agent
 
 health_router = create_health_router(
-    agent_name="Auditor Agent",
+    agent_name="Communicator Agent",
     version="2.0.0",
-    agent_getter=get_auditor_agent
+    agent_getter=get_communicator_agent
 )
 app.include_router(health_router)
 
-# Validation routes (agent-specific)
-app.include_router(validation_router)
+# Notification routes (agent-specific)
+app.include_router(notification_router)
 
 # ============================================================================
 # EXCEPTION HANDLERS
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8081,
+        port=8083,
         log_level="info",
         access_log=True,
         timeout_keep_alive=65

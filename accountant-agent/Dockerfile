@@ -9,7 +9,7 @@ COPY shared/ ./shared/
 
 # Install dependencies in a separate layer for better caching
 # Fix the requirements path for Docker context (../shared -> shared)
-COPY auditor-agent/requirements.txt .
+COPY accountant-agent/requirements.txt .
 RUN sed -i 's|../shared/requirements.txt|shared/requirements.txt|g' requirements.txt && \
     pip install --no-cache-dir --user -r requirements.txt
 
@@ -37,10 +37,10 @@ COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 
 # Copy application code (entire directory structure)
 COPY --chown=appuser:appuser shared/ ./shared/
-COPY --chown=appuser:appuser auditor-agent/*.py ./
-# Agent-specific modules only (cache, middleware, utils now in shared/)
-COPY --chown=appuser:appuser auditor-agent/validators/ ./validators/
-COPY --chown=appuser:appuser auditor-agent/routes/ ./routes/
+COPY --chown=appuser:appuser accountant-agent/*.py ./
+# Agent-specific modules (calculators and routes)
+COPY --chown=appuser:appuser accountant-agent/calculators/ ./calculators/
+COPY --chown=appuser:appuser accountant-agent/routes/ ./routes/
 
 # Switch to non-root user
 USER appuser
@@ -49,7 +49,7 @@ USER appuser
 ENV PATH=/home/appuser/.local/bin:$PATH
 
 # Set environment variables
-ENV PORT=8081 \
+ENV PORT=8082 \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONHASHSEED=random \
@@ -61,7 +61,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT}/health').read()" || exit 1
 
 # Expose port
-EXPOSE 8081
+EXPOSE 8082
 
 # Run application with security settings
 CMD exec uvicorn main:app \

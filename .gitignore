@@ -7,5 +7,6 @@ firebase_credentials.json
 *.sh
 *.md
 venv/
+tests/
 note.txt
 serviceAccountKey.jsonvenv/
