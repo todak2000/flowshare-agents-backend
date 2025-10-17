@@ -11,7 +11,7 @@ import os
 # Add parent directory to path for shared module imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from utils import utc_now
+from shared.utils import utc_now
 
 router = APIRouter(tags=["Health"])
 
