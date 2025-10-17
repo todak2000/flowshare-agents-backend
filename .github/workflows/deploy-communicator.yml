@@ -53,7 +53,7 @@ jobs:
           docker push "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/communicator-agent:${{ github.sha }}"
           docker push "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/communicator-agent:latest"
 
-            # 7. Deploy the container image to Cloud Run
+      # 7. Deploy the container image to Cloud Run
       - name: Deploy to Cloud Run
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v2
@@ -61,23 +61,28 @@ jobs:
           service: communicator-agent
           region: "europe-west1"
           image: "europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/flowshare-repo/communicator-agent:${{ github.sha }}"
-          memory: "1Gi"
-          cpu: "2"
-          timeout: "60"
-          min_instances: "0"
-          max_instances: "20"
-          concurrency: "100"
-          port: "8083"
-          allow_unauthenticated: true
-          cpu_throttling: true
-          execution_environment: "gen2"
-          service_account: ${{ secrets.CLOUD_RUN_SA_EMAIL }}
+
+          # Use the dedicated 'env_vars' input for environment variables
           env_vars: |
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
             GCP_REGION=europe-west1
             ZEPTO_TOKEN=${{ secrets.ZEPTO_TOKEN }}
             ZEPTO_FROM_EMAIL=${{ secrets.ZEPTO_FROM_EMAIL }}
+
+          # Other flags remain here
+          flags: |
+            --memory=1Gi
+            --cpu=2
+            --timeout=60
+            --min-instances=0
+            --max-instances=20
+            --concurrency=100
+            --port=8083
+            --allow-unauthenticated
+            --cpu-throttling
+            --execution-environment=gen2
+            --service-account=${{ secrets.CLOUD_RUN_SA_EMAIL }}
 
       # 8. Output the URL of the deployed service
       - name: Show Deployed URL
