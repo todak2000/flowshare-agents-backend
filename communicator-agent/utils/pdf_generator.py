@@ -9,8 +9,15 @@ import os
 import tempfile
 from datetime import datetime
 from typing import Optional
-from weasyprint import HTML, CSS
-from weasyprint.text.fonts import FontConfiguration
+
+# Try to import WeasyPrint (requires system libraries)
+try:
+    from weasyprint import HTML, CSS
+    from weasyprint.text.fonts import FontConfiguration
+    WEASYPRINT_AVAILABLE = True
+except (ImportError, OSError) as e:
+    WEASYPRINT_AVAILABLE = False
+    _import_error = str(e)
 
 
 def get_pdf_css() -> str:
@@ -390,7 +397,13 @@ async def generate_reconciliation_pdf(
 
     Returns:
         Path to the generated PDF file
+
+    Raises:
+        RuntimeError: If WeasyPrint is not available
     """
+    if not WEASYPRINT_AVAILABLE:
+        raise RuntimeError(f"PDF generation unavailable: {_import_error}")
+
     # Generate HTML content
     html_content = generate_reconciliation_pdf_html(reconciliation_data, ai_summary)
 

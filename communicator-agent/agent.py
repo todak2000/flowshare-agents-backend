@@ -23,7 +23,22 @@ import os
 # Import agent-specific notifiers
 from notifiers import EmailNotifier, SMSNotifier, WebhookNotifier
 from templates import format_ai_reconciliation_report, format_reconciliation_pdf_email
-from utils import ai_report_generator, pdf_generator
+from utils import ai_report_generator
+
+# Optional PDF generation (requires system libraries)
+try:
+    from utils import pdf_generator
+    # Check if WeasyPrint is actually available in the module
+    if hasattr(pdf_generator, 'WEASYPRINT_AVAILABLE') and pdf_generator.WEASYPRINT_AVAILABLE:
+        PDF_ENABLED = True
+        logger.info("PDF generation enabled")
+    else:
+        PDF_ENABLED = False
+        error_msg = getattr(pdf_generator, '_import_error', 'Unknown error')
+        logger.warning(f"PDF generation disabled: {error_msg}")
+except (ImportError, OSError) as e:
+    PDF_ENABLED = False
+    logger.warning(f"PDF generation disabled (module import failed): {e}")
 
 
 class CommunicatorAgent:
@@ -142,8 +157,6 @@ class CommunicatorAgent:
             if notification.type == NotificationType.EMAIL:
                 # Check if this is a reconciliation report (has reconciliation_data in metadata)
                 if notification.metadata and 'reconciliation_data' in notification.metadata:
-                    logger.info("Generating PDF reconciliation report")
-
                     reconciliation_data = notification.metadata.get('reconciliation_data', {})
 
                     # Generate AI summary
@@ -151,41 +164,54 @@ class CommunicatorAgent:
                         reconciliation_data
                     )
 
-                    # Generate PDF
-                    pdf_path = await pdf_generator.generate_reconciliation_pdf(
-                        reconciliation_data,
-                        ai_summary
-                    )
+                    # Try PDF generation if enabled
+                    if PDF_ENABLED:
+                        logger.info("Generating PDF reconciliation report")
+                        try:
+                            # Generate PDF
+                            pdf_path = await pdf_generator.generate_reconciliation_pdf(
+                                reconciliation_data,
+                                ai_summary
+                            )
 
-                    try:
-                        # Upload PDF to Firebase Storage
-                        period_month = reconciliation_data.get('period_month', 'Unknown').replace(' ', '_')
-                        storage_path = f"reconciliation_reports/{period_month}/{os.path.basename(pdf_path)}"
+                            # Upload PDF to Firebase Storage
+                            period_month = reconciliation_data.get('period_month', 'Unknown').replace(' ', '_')
+                            storage_path = f"reconciliation_reports/{period_month}/{os.path.basename(pdf_path)}"
 
-                        pdf_url = storage_client.upload_file(
-                            local_path=pdf_path,
-                            storage_path=storage_path,
-                            content_type='application/pdf',
-                            public=False  # Use signed URL for security
-                        )
+                            pdf_url = storage_client.upload_file(
+                                local_path=pdf_path,
+                                storage_path=storage_path,
+                                content_type='application/pdf',
+                                public=False  # Use signed URL for security
+                            )
 
-                        # Format email with download link
-                        body = format_reconciliation_pdf_email(reconciliation_data, pdf_url)
+                            # Format email with download link
+                            body = format_reconciliation_pdf_email(reconciliation_data, pdf_url)
 
-                        success = await self._email_notifier.send(
-                            recipient=notification.recipient,
-                            subject=notification.subject or f"FlowShare {period_month} Reconciliation Report",
-                            body=body,
-                            metadata=notification.metadata
-                        )
+                            success = await self._email_notifier.send(
+                                recipient=notification.recipient,
+                                subject=notification.subject or f"FlowShare {period_month} Reconciliation Report",
+                                body=body,
+                                metadata=notification.metadata
+                            )
 
-                        # Clean up local PDF file
-                        if os.path.exists(pdf_path):
-                            os.remove(pdf_path)
+                            # Clean up local PDF file
+                            if os.path.exists(pdf_path):
+                                os.remove(pdf_path)
 
-                    except Exception as e:
-                        logger.error("Failed to generate/upload PDF, falling back to inline report", error=str(e))
-                        # Fallback to inline email if PDF generation fails
+                        except Exception as e:
+                            logger.error("Failed to generate/upload PDF, falling back to inline report", error=str(e))
+                            # Fallback to inline email if PDF generation fails
+                            body = format_ai_reconciliation_report(reconciliation_data, ai_summary)
+                            success = await self._email_notifier.send(
+                                recipient=notification.recipient,
+                                subject=notification.subject or "FlowShare Reconciliation Report",
+                                body=body,
+                                metadata=notification.metadata
+                            )
+                    else:
+                        # PDF disabled - send inline report
+                        logger.info("Sending inline reconciliation report (PDF generation disabled)")
                         body = format_ai_reconciliation_report(reconciliation_data, ai_summary)
                         success = await self._email_notifier.send(
                             recipient=notification.recipient,
