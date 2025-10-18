@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from shared.logger import logger
 from typing import Dict, Any, Optional
 import httpx
+from ..templates import get_email_template, format_generic_notification
 
 
 class EmailNotifier:
@@ -76,8 +77,21 @@ class EmailNotifier:
                 logger.error("ZeptoMail token not configured")
                 return False
 
-            # Check if body is HTML or plain text
-            is_html = '<html>' in body.lower() or '<body>' in body.lower() or '<p>' in body.lower()
+            # Check if body is already a full HTML template
+            is_full_html = '<html>' in body.lower() and '</html>' in body.lower()
+
+            # If it's plain text or partial HTML, wrap it in professional template
+            if not is_full_html:
+                # Convert plain text to HTML paragraphs
+                if '<' not in body:
+                    # Plain text - convert to HTML
+                    body_html = '<p>' + body.replace('\n\n', '</p><p>').replace('\n', '<br>') + '</p>'
+                else:
+                    # Partial HTML - use as is
+                    body_html = body
+
+                # Wrap in professional template
+                body = format_generic_notification(subject, body_html)
 
             # Prepare ZeptoMail payload
             payload = {
@@ -93,13 +107,8 @@ class EmailNotifier:
                     }
                 ],
                 "subject": subject,
+                "htmlbody": body  # Always send HTML now with professional template
             }
-
-            # Add HTML or text content
-            if is_html:
-                payload["htmlbody"] = body
-            else:
-                payload["textbody"] = body
 
             # Add optional fields from metadata
             if metadata:
