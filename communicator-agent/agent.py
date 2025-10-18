@@ -20,6 +20,8 @@ import asyncio
 
 # Import agent-specific notifiers
 from notifiers import EmailNotifier, SMSNotifier, WebhookNotifier
+from templates import format_ai_reconciliation_report
+from utils import ai_report_generator
 
 
 class CommunicatorAgent:
@@ -135,13 +137,37 @@ class CommunicatorAgent:
             Tuple of (success, error_message)
         """
         try:
-            if notification.type == NotificationType.EMAIL:
-                success = await self._email_notifier.send(
-                    recipient=notification.recipient,
-                    subject=notification.subject or "FlowShare Notification",
-                    body=notification.body,
-                    metadata=notification.metadata
-                )
+            if notification.type == NotificationType.EMAIL or notification.type == 'reconciliation_report':
+                # Special handling for reconciliation reports
+                if notification.type == 'reconciliation_report' or (
+                    notification.metadata and 'reconciliation_data' in notification.metadata
+                ):
+                    logger.info("Generating AI-powered reconciliation report")
+
+                    reconciliation_data = notification.metadata.get('reconciliation_data', {})
+
+                    # Generate AI summary
+                    ai_summary = await ai_report_generator.generate_reconciliation_summary(
+                        reconciliation_data
+                    )
+
+                    # Format email with AI summary and full allocation details
+                    body = format_ai_reconciliation_report(reconciliation_data, ai_summary)
+
+                    success = await self._email_notifier.send(
+                        recipient=notification.recipient,
+                        subject=notification.subject or "FlowShare Reconciliation Report",
+                        body=body,
+                        metadata=notification.metadata
+                    )
+                else:
+                    # Regular email
+                    success = await self._email_notifier.send(
+                        recipient=notification.recipient,
+                        subject=notification.subject or "FlowShare Notification",
+                        body=notification.body,
+                        metadata=notification.metadata
+                    )
             elif notification.type == NotificationType.SMS:
                 success = await self._sms_notifier.send(
                     phone_number=notification.recipient,

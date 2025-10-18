@@ -15,6 +15,9 @@ def get_email_template(body_content: str, preheader: str = "") -> str:
     Returns:
         Fully formatted HTML email with FlowShare branding
     """
+    import datetime
+    current_year = datetime.datetime.now().year
+
     return f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -274,12 +277,113 @@ def get_email_template(body_content: str, preheader: str = "") -> str:
     </table>
 </body>
 </html>
-""".replace('{current_year}', str(__import__('datetime').datetime.now().year))
+"""
+
+
+def format_ai_reconciliation_report(reconciliation_data: dict, ai_summary: str = "") -> str:
+    """
+    Format comprehensive reconciliation report with AI summary
+
+    Args:
+        reconciliation_data: Dictionary with reconciliation details
+        ai_summary: AI-generated executive summary (optional)
+
+    Returns:
+        HTML formatted email body with full report
+    """
+    period_start = reconciliation_data.get('period_start', '')
+    period_end = reconciliation_data.get('period_end', '')
+    period_month = reconciliation_data.get('period_month', '')
+    allocations_count = reconciliation_data.get('allocations_count', 0)
+    total_input = reconciliation_data.get('total_input_volume', 0)
+    terminal_volume = reconciliation_data.get('terminal_volume', 0)
+    shrinkage = reconciliation_data.get('shrinkage_factor', 0)
+    allocations = reconciliation_data.get('allocations', [])
+
+    # Generate allocation table rows
+    allocation_rows = ""
+    for alloc in allocations:
+        partner = alloc.get('partner', 'Unknown')
+        input_vol = alloc.get('input_volume', 0)
+        allocated_vol = alloc.get('allocated_volume', 0)
+        loss = alloc.get('volume_loss', 0)
+        pct = alloc.get('percentage', 0)
+        efficiency = (allocated_vol / input_vol * 100) if input_vol > 0 else 0
+
+        allocation_rows += f"""
+                <tr>
+                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><strong>{partner}</strong></td>
+                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">{input_vol:,.2f}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #10b981;">{allocated_vol:,.2f}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: {'#ef4444' if loss > 0 else '#10b981'};">{loss:,.2f}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">{pct:.2f}%</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">{efficiency:.1f}%</td>
+                </tr>
+        """
+
+    body = f"""
+        <h1>📊 {period_month} Reconciliation Report</h1>
+
+        <p>Hello,</p>
+
+        <p>The reconciliation for <strong>{period_month}</strong> ({period_start} to {period_end}) has been completed successfully.</p>
+
+        {f'<div class="highlight-box"><h3>🤖 Executive Summary</h3>{ai_summary}</div>' if ai_summary else ''}
+
+        <div class="highlight-box">
+            <h3>📈 Reconciliation Overview</h3>
+            <table class="data-table" style="width: 100%; margin-top: 15px;">
+                <tr>
+                    <td><strong>Period:</strong></td>
+                    <td>{period_start} to {period_end}</td>
+                    <td><strong>Total Partners:</strong></td>
+                    <td>{allocations_count}</td>
+                </tr>
+                <tr>
+                    <td><strong>Total Input Volume:</strong></td>
+                    <td>{total_input:,.2f} BBL</td>
+                    <td><strong>Terminal Volume:</strong></td>
+                    <td>{terminal_volume:,.2f} BBL</td>
+                </tr>
+                <tr>
+                    <td><strong>Shrinkage Factor:</strong></td>
+                    <td colspan="3">{abs(shrinkage):.2f}%</td>
+                </tr>
+            </table>
+        </div>
+
+        <h2>👥 Partner Allocations</h2>
+        <table class="data-table" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <thead style="background-color: #edf2f7;">
+                <tr>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0;">Partner</th>
+                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #cbd5e0;">Input (BBL)</th>
+                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #cbd5e0;">Allocated (BBL)</th>
+                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #cbd5e0;">Loss (BBL)</th>
+                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #cbd5e0;">Share (%)</th>
+                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #cbd5e0;">Efficiency</th>
+                </tr>
+            </thead>
+            <tbody>
+                {allocation_rows}
+            </tbody>
+        </table>
+
+        <div class="divider"></div>
+
+        <p style="font-size: 14px; color: #718096;">
+            <strong>Note:</strong> This report reflects the proportional back-allocation of terminal volumes
+            to each partner based on their net volume contributions for {period_month}.
+            Please log into the FlowShare platform to view additional details and historical trends.
+        </p>
+    """
+
+    return get_email_template(body, f"Reconciliation report for {period_month}")
 
 
 def format_reconciliation_email(reconciliation_data: dict) -> str:
     """
-    Format reconciliation notification email
+    Format reconciliation notification email (legacy - kept for compatibility)
 
     Args:
         reconciliation_data: Dictionary with reconciliation details
