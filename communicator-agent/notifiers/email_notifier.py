@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from shared.logger import logger
 from typing import Dict, Any, Optional
 import httpx
-from ..templates import get_email_template, format_generic_notification
+from templates import get_email_template, format_generic_notification
 
 
 class EmailNotifier:
