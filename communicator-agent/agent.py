@@ -11,7 +11,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from shared.models import Notification, NotificationStatus, NotificationType
 from shared.firestore_client import firestore_client
-from shared.storage_client import storage_client
 from shared.config import config
 from shared.logger import logger
 from shared.cache import SimpleCache
@@ -19,6 +18,15 @@ from shared.utils import utc_now
 from typing import Dict, Any, Optional
 import asyncio
 import os
+
+# Optional Storage client (for PDF uploads)
+try:
+    from shared.storage_client import storage_client
+    STORAGE_ENABLED = True
+    logger.info("Firebase Storage enabled")
+except Exception as e:
+    STORAGE_ENABLED = False
+    logger.warning(f"Firebase Storage disabled: {e}")
 
 # Import agent-specific notifiers
 from notifiers import EmailNotifier, SMSNotifier, WebhookNotifier
@@ -165,7 +173,7 @@ class CommunicatorAgent:
                     )
 
                     # Try PDF generation if enabled
-                    if PDF_ENABLED:
+                    if PDF_ENABLED and STORAGE_ENABLED:
                         logger.info("Generating PDF reconciliation report")
                         try:
                             # Generate PDF
@@ -211,7 +219,8 @@ class CommunicatorAgent:
                             )
                     else:
                         # PDF disabled - send inline report
-                        logger.info("Sending inline reconciliation report (PDF generation disabled)")
+                        reason = "PDF generation disabled" if not PDF_ENABLED else "Storage disabled"
+                        logger.info(f"Sending inline reconciliation report ({reason})")
                         body = format_ai_reconciliation_report(reconciliation_data, ai_summary)
                         success = await self._email_notifier.send(
                             recipient=notification.recipient,
@@ -287,11 +296,32 @@ class CommunicatorAgent:
             'updated_at': utc_now().isoformat()
         }
 
-        firestore_client.update_document(
-            collection=config.COLLECTION_NOTIFICATIONS,
-            doc_id=notification_id,
-            data=update_data
-        )
+        try:
+            firestore_client.update_document(
+                collection=config.COLLECTION_NOTIFICATIONS,
+                doc_id=notification_id,
+                data=update_data
+            )
+        except Exception as e:
+            # If document doesn't exist, create it
+            if "No document to update" in str(e):
+                logger.info("Document doesn't exist, creating new notification document")
+                create_data = {
+                    'id': notification_id,
+                    'type': notification.type,
+                    'recipient': notification.recipient,
+                    'subject': notification.subject,
+                    'body': notification.body[:500] if notification.body else None,  # Truncate body
+                    'metadata': notification.metadata,
+                    **update_data
+                }
+                firestore_client.create_document(
+                    collection=config.COLLECTION_NOTIFICATIONS,
+                    doc_id=notification_id,
+                    data=create_data
+                )
+            else:
+                raise
 
     def _log_activity(self, notification_id: str, notification: Notification, execution_time: float) -> None:
         """

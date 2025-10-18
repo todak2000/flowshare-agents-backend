@@ -8,6 +8,7 @@ from typing import Dict, Any, List
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from shared.logger import logger
+from shared.config import config
 
 
 class AIReportGenerator:
@@ -15,7 +16,9 @@ class AIReportGenerator:
 
     def __init__(self):
         self.api_key = os.getenv('GEMINI_API_KEY', '')
-        self.api_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+        # Use model from config (defaults to gemini-2.0-flash-exp)
+        model_name = config.GEMINI_MODEL
+        self.api_url = f'https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent'
 
     async def generate_reconciliation_summary(self, reconciliation_data: Dict[str, Any]) -> str:
         """
