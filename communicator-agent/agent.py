@@ -137,11 +137,9 @@ class CommunicatorAgent:
             Tuple of (success, error_message)
         """
         try:
-            if notification.type == NotificationType.EMAIL or notification.type == 'reconciliation_report':
-                # Special handling for reconciliation reports
-                if notification.type == 'reconciliation_report' or (
-                    notification.metadata and 'reconciliation_data' in notification.metadata
-                ):
+            if notification.type == NotificationType.EMAIL:
+                # Check if this is a reconciliation report (has reconciliation_data in metadata)
+                if notification.metadata and 'reconciliation_data' in notification.metadata:
                     logger.info("Generating AI-powered reconciliation report")
 
                     reconciliation_data = notification.metadata.get('reconciliation_data', {})
