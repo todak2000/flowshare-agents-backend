@@ -61,12 +61,44 @@ def get_email_template(body_content: str, preheader: str = "") -> str:
             text-align: center;
         }}
 
-        .logo {{
+        .logo-container {{
+            display: inline-block;
+            margin-bottom: 15px;
+        }}
+
+        .logo-box {{
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #3b82f6 0%, #9333ea 50%, #06b6d4 100%);
+            border-radius: 10px;
+            vertical-align: middle;
+            margin-right: 12px;
+        }}
+
+        .logo-pulse {{
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #facc15 0%, #f97316 100%);
+            border-radius: 50%;
+        }}
+
+        .logo-text {{
+            display: inline-block;
             font-size: 32px;
             font-weight: bold;
-            color: #ffffff;
-            text-decoration: none;
-            letter-spacing: 1px;
+            background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            vertical-align: middle;
+            letter-spacing: 0.5px;
         }}
 
         .logo-subtitle {{
@@ -237,8 +269,14 @@ def get_email_template(body_content: str, preheader: str = "") -> str:
 
                     <!-- Header -->
                     <div class="header">
-                        <div class="logo">
-                            ⚡ FLOWSHARE
+                        <div class="logo-container">
+                            <div class="logo-box">
+                                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                                </svg>
+                                <div class="logo-pulse"></div>
+                            </div>
+                            <span class="logo-text">FlowShare</span>
                         </div>
                         <div class="logo-subtitle">
                             Joint Venture Production Allocation Platform
@@ -253,7 +291,7 @@ def get_email_template(body_content: str, preheader: str = "") -> str:
                     <!-- Footer -->
                     <div class="footer">
                         <div class="footer-logo">
-                            ⚡ FLOWSHARE
+                            FlowShare
                         </div>
                         <p style="margin: 15px 0;">
                             Automated production allocation and reconciliation for joint ventures
@@ -496,6 +534,76 @@ def format_markdown_for_email(text: str) -> str:
         formatted_lines.append('</ul>')
 
     return '\n'.join(formatted_lines)
+
+
+def format_reconciliation_pdf_email(reconciliation_data: dict, pdf_download_url: str) -> str:
+    """
+    Format reconciliation email with PDF download link
+
+    Args:
+        reconciliation_data: Dictionary with reconciliation details
+        pdf_download_url: URL to download the PDF report
+
+    Returns:
+        HTML formatted email body with download link
+    """
+    period_start = reconciliation_data.get('period_start', '')
+    period_end = reconciliation_data.get('period_end', '')
+    period_month = reconciliation_data.get('period_month', '')
+    allocations_count = reconciliation_data.get('allocations_count', 0)
+    total_input = reconciliation_data.get('total_input_volume', 0)
+    terminal_volume = reconciliation_data.get('terminal_volume', 0)
+    shrinkage = reconciliation_data.get('shrinkage_factor', 0)
+
+    body = f"""
+        <h1>📊 {period_month} Reconciliation Report Available</h1>
+
+        <p>Hello,</p>
+
+        <p>The reconciliation for <strong>{period_month}</strong> ({period_start} to {period_end}) has been completed successfully.</p>
+
+        <div class="highlight-box">
+            <h3>📈 Quick Summary</h3>
+            <table class="data-table" style="width: 100%; margin-top: 15px;">
+                <tr>
+                    <td><strong>Period:</strong></td>
+                    <td>{period_start} to {period_end}</td>
+                </tr>
+                <tr>
+                    <td><strong>Total Partners:</strong></td>
+                    <td>{allocations_count}</td>
+                </tr>
+                <tr>
+                    <td><strong>Total Input Volume:</strong></td>
+                    <td>{total_input:,.2f} BBL</td>
+                </tr>
+                <tr>
+                    <td><strong>Terminal Volume:</strong></td>
+                    <td>{terminal_volume:,.2f} BBL</td>
+                </tr>
+                <tr>
+                    <td><strong>Shrinkage Factor:</strong></td>
+                    <td>{abs(shrinkage):.2f}%</td>
+                </tr>
+            </table>
+        </div>
+
+        <h2>📄 Download Complete Report</h2>
+        <p>Your detailed reconciliation report is ready. Click the button below to download the full PDF report with AI-powered analysis and partner allocations.</p>
+
+        <p style="text-align: center; margin: 30px 0;">
+            <a href="{pdf_download_url}" class="button">📥 Download PDF Report</a>
+        </p>
+
+        <div class="divider"></div>
+
+        <p style="font-size: 14px; color: #718096;">
+            <strong>Note:</strong> The PDF report includes detailed partner allocations, AI-generated insights,
+            and comprehensive volume analysis. The download link will be available for 7 days.
+        </p>
+    """
+
+    return get_email_template(body, f"Reconciliation report for {period_month} is ready")
 
 
 def format_audit_alert_email(audit_data: dict) -> str:
