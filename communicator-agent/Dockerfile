@@ -41,7 +41,7 @@ COPY --chown=appuser:appuser communicator-agent/*.py ./
 # Agent-specific modules (notifiers and routes)
 COPY --chown=appuser:appuser communicator-agent/notifiers/ ./notifiers/
 COPY --chown=appuser:appuser communicator-agent/routes/ ./routes/
-
+COPY --chown=appuser:appuser communicator-agent/templates/ ./templates/
 # Switch to non-root user
 USER appuser
 
