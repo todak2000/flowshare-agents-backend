@@ -257,25 +257,82 @@ class AllocationCalculator:
         for alloc in raw_allocations:
             alloc['allocated_volume'] = terminal_volume * (alloc['final_percentage'] / 100)
 
+        # CRITICAL CONSTRAINT: Allocated volume CANNOT exceed input (gross) volume
+        # Cap each allocation at their input volume
+        volume_capped_count = 0
+        for alloc in raw_allocations:
+            if alloc['allocated_volume'] > alloc['gross_volume']:
+                logger.warning(
+                    "Partner allocation exceeds input, capping to input volume",
+                    partner=alloc['partner'],
+                    calculated_allocation=round(alloc['allocated_volume'], 2),
+                    input_volume=round(alloc['gross_volume'], 2)
+                )
+                alloc['allocated_volume'] = alloc['gross_volume']
+                volume_capped_count += 1
+
         # Round allocated volumes
         for alloc in raw_allocations:
             alloc['allocated_volume'] = round(alloc['allocated_volume'], 2)
 
-        # Final adjustment: Ensure rounded volumes sum exactly to terminal volume
+        # Calculate total allocated after capping and rounding
         total_allocated = sum(a['allocated_volume'] for a in raw_allocations)
         volume_difference = round(terminal_volume - total_allocated, 2)
 
-        # Add difference to the largest allocation
-        if volume_difference != 0 and len(raw_allocations) > 0:
+        # If there's excess terminal volume after capping, try to redistribute
+        if volume_difference > 0:
+            # Find partners with room (allocated < input)
+            partners_with_room = [
+                alloc for alloc in raw_allocations
+                if alloc['allocated_volume'] < alloc['gross_volume']
+            ]
+
+            if partners_with_room:
+                # Calculate how much room each has
+                total_room = sum(
+                    alloc['gross_volume'] - alloc['allocated_volume']
+                    for alloc in partners_with_room
+                )
+
+                # Distribute proportionally to available room, but don't exceed input volumes
+                remaining_difference = volume_difference
+                for alloc in partners_with_room:
+                    partner_room = alloc['gross_volume'] - alloc['allocated_volume']
+                    if total_room > 0 and remaining_difference > 0:
+                        additional = min(
+                            remaining_difference * (partner_room / total_room),
+                            partner_room
+                        )
+                        alloc['allocated_volume'] += additional
+                        alloc['allocated_volume'] = round(alloc['allocated_volume'], 2)
+                        remaining_difference = round(remaining_difference - additional, 2)
+
+                logger.info(
+                    "Redistributed excess terminal volume to partners with room",
+                    redistributed_amount=round(volume_difference - remaining_difference, 2),
+                    unallocated_remainder=round(remaining_difference, 2)
+                )
+            else:
+                logger.warning(
+                    "Terminal volume exceeds total input volume, cannot allocate excess",
+                    terminal_volume=terminal_volume,
+                    total_input=sum(a['gross_volume'] for a in raw_allocations),
+                    excess=volume_difference
+                )
+
+        elif volume_difference < 0:
+            # We allocated too much (shouldn't happen with caps, but handle it)
+            # Remove from the largest allocation that has room
+            abs_diff = abs(volume_difference)
             largest_idx = max(range(len(raw_allocations)),
                             key=lambda i: raw_allocations[i]['allocated_volume'])
-            raw_allocations[largest_idx]['allocated_volume'] += volume_difference
+            raw_allocations[largest_idx]['allocated_volume'] -= abs_diff
             raw_allocations[largest_idx]['allocated_volume'] = round(raw_allocations[largest_idx]['allocated_volume'], 2)
 
         # Recalculate final percentages from adjusted volumes (and ensure cap)
         for alloc in raw_allocations:
             alloc['final_percentage'] = min(
-                (alloc['allocated_volume'] / terminal_volume) * 100,
+                (alloc['allocated_volume'] / terminal_volume) * 100 if terminal_volume > 0 else 0,
                 MAX_PERCENTAGE
             )
 
