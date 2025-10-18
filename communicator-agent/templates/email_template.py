@@ -1,17 +1,17 @@
 """
 Professional Email Templates for FlowShare
-Includes branded templates with logo and consistent formatting
+Simplified and user-friendly design
 """
 
 
 def get_email_template(body_content: str, preheader: str = "") -> str:
     """
     Generate a professional HTML email with FlowShare branding
-
+    
     Args:
         body_content: Main content of the email (HTML string)
         preheader: Short preview text shown in email clients
-
+    
     Returns:
         Fully formatted HTML email with FlowShare branding
     """
@@ -24,17 +24,7 @@ def get_email_template(body_content: str, preheader: str = "") -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="x-apple-disable-message-reformatting">
     <title>FlowShare Notification</title>
-    <!--[if mso]>
-    <noscript>
-        <xml>
-            <o:OfficeDocumentSettings>
-                <o:PixelsPerInch>96</o:PixelsPerInch>
-            </o:OfficeDocumentSettings>
-        </xml>
-    </noscript>
-    <![endif]-->
     <style>
         * {{
             margin: 0;
@@ -46,273 +36,232 @@ def get_email_template(body_content: str, preheader: str = "") -> str:
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
             color: #333333;
-            background-color: #f4f4f4;
+            background-color: #f5f5f5;
         }}
 
         .email-container {{
-            max-width: 600px;
-            margin: 0 auto;
+            max-width: 650px;
+            margin: 20px auto;
             background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }}
 
         .header {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 40px 20px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            padding: 30px;
             text-align: center;
+            color: white;
         }}
 
-        .logo-container {{
-            display: inline-block;
-            margin-bottom: 15px;
-        }}
-
-        .logo-box {{
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #3b82f6 0%, #9333ea 50%, #06b6d4 100%);
-            border-radius: 10px;
-            vertical-align: middle;
-            margin-right: 12px;
-        }}
-
-        .logo-pulse {{
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            width: 16px;
-            height: 16px;
-            background: linear-gradient(135deg, #facc15 0%, #f97316 100%);
-            border-radius: 50%;
-        }}
-
-        .logo-text {{
-            display: inline-block;
-            font-size: 32px;
+        .logo {{
+            font-size: 28px;
             font-weight: bold;
-            background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            vertical-align: middle;
-            letter-spacing: 0.5px;
+            margin-bottom: 5px;
         }}
 
         .logo-subtitle {{
-            color: #e0e7ff;
-            font-size: 14px;
-            margin-top: 8px;
+            font-size: 13px;
+            opacity: 0.9;
         }}
 
         .content {{
-            padding: 40px 30px;
+            padding: 40px 35px;
         }}
 
         .content h1 {{
-            color: #1a202c;
+            color: #1e293b;
             font-size: 24px;
-            margin-bottom: 20px;
-        }}
-
-        .content h2 {{
-            color: #2d3748;
-            font-size: 20px;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }}
-
-        .content h3 {{
-            color: #4a5568;
-            font-size: 18px;
-            margin-top: 25px;
-            margin-bottom: 12px;
-        }}
-
-        .content p {{
-            color: #4a5568;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }}
-
-        .content ul {{
-            margin-bottom: 20px;
-            padding-left: 20px;
-        }}
-
-        .content li {{
-            color: #4a5568;
             margin-bottom: 10px;
         }}
 
-        .button {{
-            display: inline-block;
-            padding: 14px 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff !important;
-            text-decoration: none;
+        .content p {{
+            color: #475569;
+            margin-bottom: 20px;
+            font-size: 15px;
+        }}
+
+        .info-section {{
+            background-color: #f8fafc;
             border-radius: 8px;
-            font-weight: 600;
-            margin: 20px 0;
-            text-align: center;
-        }}
-
-        .button:hover {{
-            background: linear-gradient(135deg, #5568d3 0%, #6940a3 100%);
-        }}
-
-        .highlight-box {{
-            background-color: #f7fafc;
-            border-left: 4px solid #667eea;
             padding: 20px;
             margin: 25px 0;
-            border-radius: 4px;
+        }}
+
+        .info-row {{
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }}
+
+        .info-row:last-child {{
+            border-bottom: none;
+        }}
+
+        .info-label {{
+            color: #64748b;
+            font-size: 14px;
+        }}
+
+        .info-value {{
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 14px;
         }}
 
         .data-table {{
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
-        }}
-
-        .data-table th {{
-            background-color: #edf2f7;
-            color: #2d3748;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid #cbd5e0;
-        }}
-
-        .data-table td {{
-            padding: 12px;
-            border-bottom: 1px solid #e2e8f0;
-            color: #4a5568;
-        }}
-
-        .data-table tr:last-child td {{
-            border-bottom: none;
-        }}
-
-        .footer {{
-            background-color: #2d3748;
-            color: #a0aec0;
-            padding: 30px;
-            text-align: center;
+            margin: 25px 0;
             font-size: 14px;
         }}
 
-        .footer-logo {{
-            font-size: 24px;
-            font-weight: bold;
-            color: #ffffff;
-            margin-bottom: 15px;
+        .data-table thead {{
+            background-color: #1e293b;
+            color: white;
         }}
 
-        .footer-links {{
-            margin: 20px 0;
+        .data-table th {{
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }}
 
-        .footer-link {{
-            color: #a0aec0;
-            text-decoration: none;
-            margin: 0 15px;
+        .data-table th.right {{
+            text-align: right;
         }}
 
-        .footer-link:hover {{
-            color: #ffffff;
+        .data-table td {{
+            padding: 14px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
         }}
 
-        .divider {{
-            height: 1px;
-            background-color: #e2e8f0;
-            margin: 30px 0;
+        .data-table td.right {{
+            text-align: right;
+        }}
+
+        .data-table tbody tr:hover {{
+            background-color: #f8fafc;
+        }}
+
+        .data-table tbody tr:last-child td {{
+            border-bottom: none;
+        }}
+
+        .partner-name {{
+            font-weight: 600;
+            color: #1e293b;
+        }}
+
+        .positive {{
+            color: #10b981;
+            font-weight: 500;
+        }}
+
+        .negative {{
+            color: #ef4444;
+            font-weight: 500;
+        }}
+
+        .badge {{
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }}
+
+        .badge-green {{
+            background-color: #d1fae5;
+            color: #065f46;
+        }}
+
+        .badge-yellow {{
+            background-color: #fef3c7;
+            color: #92400e;
+        }}
+
+        .ai-summary {{
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }}
+
+        .ai-summary h3 {{
+            color: #1e40af;
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }}
+
+        .ai-summary p {{
+            color: #1e293b;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }}
+
+        .footer {{
+            background-color: #f8fafc;
+            padding: 25px 35px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }}
+
+        .footer p {{
+            color: #64748b;
+            font-size: 13px;
+            margin: 5px 0;
         }}
 
         @media only screen and (max-width: 600px) {{
+            .email-container {{
+                margin: 10px;
+            }}
+            
             .content {{
-                padding: 30px 20px;
+                padding: 25px 20px;
             }}
 
-            .header {{
-                padding: 30px 20px;
+            .data-table {{
+                font-size: 12px;
             }}
 
-            .logo {{
-                font-size: 28px;
-            }}
-
-            .content h1 {{
-                font-size: 22px;
-            }}
-
-            .button {{
-                display: block;
-                width: 100%;
+            .data-table th,
+            .data-table td {{
+                padding: 10px 8px;
             }}
         }}
     </style>
 </head>
 <body>
-    <!-- Preheader Text -->
     <div style="display: none; max-height: 0px; overflow: hidden;">
         {preheader}
     </div>
 
-    <!-- Email Container -->
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-        <tr>
-            <td align="center" style="padding: 20px 0; background-color: #f4f4f4;">
-                <div class="email-container">
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">FlowShare</div>
+            <div class="logo-subtitle">Joint Venture Production Allocation</div>
+        </div>
 
-                    <!-- Header -->
-                    <div class="header">
-                        <div class="logo-container">
-                            <div class="logo-box">
-                                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-                                </svg>
-                                <div class="logo-pulse"></div>
-                            </div>
-                            <span class="logo-text">FlowShare</span>
-                        </div>
-                        <div class="logo-subtitle">
-                            Joint Venture Production Allocation Platform
-                        </div>
-                    </div>
+        <div class="content">
+            {body_content}
+        </div>
 
-                    <!-- Content -->
-                    <div class="content">
-                        {body_content}
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="footer">
-                        <div class="footer-logo">
-                            FlowShare
-                        </div>
-                        <p style="margin: 15px 0;">
-                            Automated production allocation and reconciliation for joint ventures
-                        </p>
-                        <div class="footer-links">
-                            <a href="#" class="footer-link">Dashboard</a>
-                            <a href="#" class="footer-link">Documentation</a>
-                            <a href="#" class="footer-link">Support</a>
-                        </div>
-                        <div style="margin-top: 25px; padding-top: 25px; border-top: 1px solid #4a5568;">
-                            <p style="font-size: 12px; color: #718096;">
-                                © {current_year} FlowShare. All rights reserved.<br>
-                                This is an automated message from the FlowShare system.
-                            </p>
-                        </div>
-                    </div>
-
-                </div>
-            </td>
-        </tr>
-    </table>
+        <div class="footer">
+            <p><strong>FlowShare</strong> - Automated Production Allocation Platform</p>
+            <p>© {current_year} FlowShare. All rights reserved.</p>
+        </div>
+    </div>
 </body>
 </html>
 """
@@ -320,12 +269,12 @@ def get_email_template(body_content: str, preheader: str = "") -> str:
 
 def format_ai_reconciliation_report(reconciliation_data: dict, ai_summary: str = "") -> str:
     """
-    Format comprehensive reconciliation report with AI summary
-
+    Format comprehensive reconciliation report with clean table layout
+    
     Args:
         reconciliation_data: Dictionary with reconciliation details
         ai_summary: AI-generated executive summary (optional)
-
+    
     Returns:
         HTML formatted email body with full report
     """
@@ -336,6 +285,8 @@ def format_ai_reconciliation_report(reconciliation_data: dict, ai_summary: str =
     total_input = reconciliation_data.get('total_input_volume', 0)
     terminal_volume = reconciliation_data.get('terminal_volume', 0)
     shrinkage = reconciliation_data.get('shrinkage_factor', 0)
+    volume_loss = reconciliation_data.get('volume_loss', 0)
+    allocated_volume = reconciliation_data.get('allocated_volume', terminal_volume)
     allocations = reconciliation_data.get('allocations', [])
 
     # Generate allocation table rows
@@ -345,61 +296,81 @@ def format_ai_reconciliation_report(reconciliation_data: dict, ai_summary: str =
         input_vol = alloc.get('input_volume', 0)
         allocated_vol = alloc.get('allocated_volume', 0)
         loss = alloc.get('volume_loss', 0)
-        pct = alloc.get('percentage', 0)
-        efficiency = (allocated_vol / input_vol * 100) if input_vol > 0 else 0
+        share_pct = alloc.get('percentage', 0)
+        efficiency = alloc.get('efficiency', 0)
+        
+        if efficiency == 0 and input_vol > 0:
+            efficiency = (allocated_vol / input_vol * 100)
+
+        # Determine badge color based on efficiency
+        badge_class = 'badge-green' if efficiency >= 96 else 'badge-yellow'
+        loss_class = 'negative' if loss > 0 else 'positive'
 
         allocation_rows += f"""
-                <tr>
-                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><strong>{partner}</strong></td>
-                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">{input_vol:,.2f}</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #10b981;">{allocated_vol:,.2f}</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: {'#ef4444' if loss > 0 else '#10b981'};">{loss:,.2f}</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">{pct:.2f}%</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">{efficiency:.1f}%</td>
-                </tr>
+            <tr>
+                <td><span class="partner-name">{partner}</span></td>
+                <td class="right">{input_vol:,.0f} bbl</td>
+                <td class="right positive">{allocated_vol:,.2f} bbl</td>
+                <td class="right {loss_class}">{loss:,.2f} bbl</td>
+                <td class="right">{share_pct:.2f}%</td>
+                <td class="right"><span class="badge {badge_class}">{efficiency:.1f}%</span></td>
+            </tr>
         """
 
     body = f"""
-        <h1>📊 {period_month} Reconciliation Report</h1>
-
-        <p>Hello,</p>
-
-        <p>The reconciliation for <strong>{period_month}</strong> ({period_start} to {period_end}) has been completed successfully.</p>
-
-        {f'<div class="highlight-box"><h3>🤖 Executive Summary</h3>{ai_summary}</div>' if ai_summary else ''}
-
-        <div class="highlight-box">
-            <h3>📈 Reconciliation Overview</h3>
-            <table class="data-table" style="width: 100%; margin-top: 15px;">
-                <tr>
-                    <td><strong>Period:</strong></td>
-                    <td>{period_start} to {period_end}</td>
-                    <td><strong>Total Partners:</strong></td>
-                    <td>{allocations_count}</td>
-                </tr>
-                <tr>
-                    <td><strong>Total Input Volume:</strong></td>
-                    <td>{total_input:,.2f} BBL</td>
-                    <td><strong>Terminal Volume:</strong></td>
-                    <td>{terminal_volume:,.2f} BBL</td>
-                </tr>
-                <tr>
-                    <td><strong>Shrinkage Factor:</strong></td>
-                    <td colspan="3">{abs(shrinkage):.2f}%</td>
-                </tr>
-            </table>
+        <h1>Reconciliation Report - {period_start} - {period_end}</h1>
+        
+        <div class="info-section">
+            <div class="info-row">
+                <span class="info-label">Period:</span>
+                <span class="info-value">{period_start} - {period_end}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Run Date:</span>
+                <span class="info-value">{reconciliation_data.get('run_date', 'N/A')}</span>
+            </div>
         </div>
 
-        <h2>👥 Partner Allocations</h2>
-        <table class="data-table" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-            <thead style="background-color: #edf2f7;">
+        <h2 style="color: #1e293b; font-size: 18px; margin: 30px 0 15px 0;">📊 Volume Summary</h2>
+        
+        <div class="info-section">
+            <div class="info-row">
+                <span class="info-label">Total Partners:</span>
+                <span class="info-value">{allocations_count}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Input Volume:</span>
+                <span class="info-value">{total_input:,.0f} BBL</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Terminal Volume:</span>
+                <span class="info-value">{terminal_volume:,.0f} BBL</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Volume Loss/Gain:</span>
+                <span class="info-value" style="color: #ef4444;">{volume_loss:,.0f} BBL</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Shrinkage:</span>
+                <span class="info-value" style="color: #f59e0b;">{abs(shrinkage):.2f}%</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Allocated Volume:</span>
+                <span class="info-value" style="color: #10b981;">{allocated_volume:,.0f} BBL</span>
+            </div>
+        </div>
+
+        <h2 style="color: #1e293b; font-size: 18px; margin: 30px 0 15px 0;">👥 Partner Allocations</h2>
+        
+        <table class="data-table">
+            <thead>
                 <tr>
-                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0;">Partner</th>
-                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #cbd5e0;">Input (BBL)</th>
-                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #cbd5e0;">Allocated (BBL)</th>
-                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #cbd5e0;">Loss (BBL)</th>
-                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #cbd5e0;">Share (%)</th>
-                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #cbd5e0;">Efficiency</th>
+                    <th>PARTNER</th>
+                    <th class="right">INPUT VOL</th>
+                    <th class="right">ALLOCATED VOL</th>
+                    <th class="right">GAIN/LOSS</th>
+                    <th class="right">SHARE</th>
+                    <th class="right">EFFICIENCY</th>
                 </tr>
             </thead>
             <tbody>
@@ -407,94 +378,29 @@ def format_ai_reconciliation_report(reconciliation_data: dict, ai_summary: str =
             </tbody>
         </table>
 
-        <div class="divider"></div>
-
-        <p style="font-size: 14px; color: #718096;">
-            <strong>Note:</strong> This report reflects the proportional back-allocation of terminal volumes
-            to each partner based on their net volume contributions for {period_month}.
-            Please log into the FlowShare platform to view additional details and historical trends.
-        </p>
-    """
-
-    return get_email_template(body, f"Reconciliation report for {period_month}")
-
-
-def format_reconciliation_email(reconciliation_data: dict) -> str:
-    """
-    Format reconciliation notification email (legacy - kept for compatibility)
-
-    Args:
-        reconciliation_data: Dictionary with reconciliation details
-
-    Returns:
-        HTML formatted email body
-    """
-    period_start = reconciliation_data.get('period_start', '')
-    period_end = reconciliation_data.get('period_end', '')
-    allocations_count = reconciliation_data.get('allocations_count', 0)
-    total_input = reconciliation_data.get('total_input_volume', 0)
-    terminal_volume = reconciliation_data.get('terminal_volume', 0)
-    shrinkage = reconciliation_data.get('shrinkage_factor', 0)
-    partners = reconciliation_data.get('partners', [])
-
-    body = f"""
-        <h1>✅ New Reconciliation Report Available</h1>
-
-        <p>Hello,</p>
-
-        <p>A new reconciliation report has been completed for the period <strong>{period_start}</strong> to <strong>{period_end}</strong>.</p>
-
-        <div class="highlight-box">
-            <h3>📊 Reconciliation Summary</h3>
-            <table class="data-table">
-                <tr>
-                    <td><strong>Period:</strong></td>
-                    <td>{period_start} to {period_end}</td>
-                </tr>
-                <tr>
-                    <td><strong>Partners:</strong></td>
-                    <td>{allocations_count}</td>
-                </tr>
-                <tr>
-                    <td><strong>Total Input Volume:</strong></td>
-                    <td>{total_input:,.2f} bbl</td>
-                </tr>
-                <tr>
-                    <td><strong>Terminal Volume:</strong></td>
-                    <td>{terminal_volume:,.2f} bbl</td>
-                </tr>
-                <tr>
-                    <td><strong>Shrinkage Factor:</strong></td>
-                    <td>{shrinkage:.2f}%</td>
-                </tr>
-            </table>
+        {f'''
+        <div class="ai-summary">
+            <h3>🤖 AI Analysis</h3>
+            {format_markdown_for_email(ai_summary)}
         </div>
+        ''' if ai_summary else ''}
 
-        <h2>Partners Involved</h2>
-        <p>{partners}</p>
-
-        <p style="text-align: center;">
-            <a href="#" class="button">View Full Report →</a>
-        </p>
-
-        <div class="divider"></div>
-
-        <p style="font-size: 14px; color: #718096;">
-            <strong>Note:</strong> Please review the allocations in the FlowShare dashboard.
-            If you have any questions or concerns, please contact your JV Coordinator.
+        <p style="color: #64748b; font-size: 13px; margin-top: 30px;">
+            This report reflects the proportional back-allocation of terminal volumes to each partner 
+            based on their net volume contributions for {period_month}.
         </p>
     """
 
-    return get_email_template(body, f"Reconciliation report for {period_start} to {period_end}")
+    return get_email_template(body, f"Reconciliation Report - {period_month}")
 
 
 def format_markdown_for_email(text: str) -> str:
     """
     Convert Markdown-like text to HTML for email display
-
+    
     Args:
         text: Text with markdown formatting
-
+    
     Returns:
         HTML formatted text
     """
@@ -503,8 +409,8 @@ def format_markdown_for_email(text: str) -> str:
     # Convert bold (**text** to <strong>text</strong>)
     text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)
 
-    # Convert headers (## Header to <h3>Header</h3>)
-    text = re.sub(r'^##\s+(.+)$', r'<h3 style="color: #2d3748; margin-top: 20px; margin-bottom: 10px;">\1</h3>', text, flags=re.MULTILINE)
+    # Convert headers (## Header to <h4>Header</h4>)
+    text = re.sub(r'^##\s+(.+)$', r'<h4 style="color: #1e293b; margin-top: 15px; margin-bottom: 8px; font-size: 15px;">\1</h4>', text, flags=re.MULTILINE)
 
     # Convert bullet points (* item to <li>item</li>)
     lines = text.split('\n')
@@ -514,21 +420,18 @@ def format_markdown_for_email(text: str) -> str:
     for line in lines:
         stripped = line.strip()
 
-        # Bullet point
         if stripped.startswith('* ') or stripped.startswith('- '):
             if not in_list:
                 formatted_lines.append('<ul style="margin: 10px 0; padding-left: 20px;">')
                 in_list = True
             item_text = stripped[2:]
-            formatted_lines.append(f'<li style="margin-bottom: 8px;">{item_text}</li>')
+            formatted_lines.append(f'<li style="margin-bottom: 6px; color: #334155;">{item_text}</li>')
         else:
             if in_list:
                 formatted_lines.append('</ul>')
                 in_list = False
             if stripped:
-                formatted_lines.append(f'<p style="margin-bottom: 10px;">{stripped}</p>')
-            else:
-                formatted_lines.append('<br>')
+                formatted_lines.append(f'<p style="margin-bottom: 10px; color: #334155;">{stripped}</p>')
 
     if in_list:
         formatted_lines.append('</ul>')
@@ -539,176 +442,76 @@ def format_markdown_for_email(text: str) -> str:
 def format_reconciliation_pdf_email(reconciliation_data: dict, pdf_download_url: str) -> str:
     """
     Format reconciliation email with PDF download link
-
+    
     Args:
         reconciliation_data: Dictionary with reconciliation details
         pdf_download_url: URL to download the PDF report
-
+    
     Returns:
         HTML formatted email body with download link
     """
+    period_month = reconciliation_data.get('period_month', '')
     period_start = reconciliation_data.get('period_start', '')
     period_end = reconciliation_data.get('period_end', '')
-    period_month = reconciliation_data.get('period_month', '')
-    allocations_count = reconciliation_data.get('allocations_count', 0)
-    total_input = reconciliation_data.get('total_input_volume', 0)
-    terminal_volume = reconciliation_data.get('terminal_volume', 0)
-    shrinkage = reconciliation_data.get('shrinkage_factor', 0)
 
     body = f"""
-        <h1>📊 {period_month} Reconciliation Report Available</h1>
+        <h1>📊 {period_month} Reconciliation Report Ready</h1>
+        
+        <p>Your detailed reconciliation report for <strong>{period_start} to {period_end}</strong> is now available.</p>
 
-        <p>Hello,</p>
-
-        <p>The reconciliation for <strong>{period_month}</strong> ({period_start} to {period_end}) has been completed successfully.</p>
-
-        <div class="highlight-box">
-            <h3>📈 Quick Summary</h3>
-            <table class="data-table" style="width: 100%; margin-top: 15px;">
-                <tr>
-                    <td><strong>Period:</strong></td>
-                    <td>{period_start} to {period_end}</td>
-                </tr>
-                <tr>
-                    <td><strong>Total Partners:</strong></td>
-                    <td>{allocations_count}</td>
-                </tr>
-                <tr>
-                    <td><strong>Total Input Volume:</strong></td>
-                    <td>{total_input:,.2f} BBL</td>
-                </tr>
-                <tr>
-                    <td><strong>Terminal Volume:</strong></td>
-                    <td>{terminal_volume:,.2f} BBL</td>
-                </tr>
-                <tr>
-                    <td><strong>Shrinkage Factor:</strong></td>
-                    <td>{abs(shrinkage):.2f}%</td>
-                </tr>
-            </table>
+        <div style="text-align: center; margin: 35px 0;">
+            <a href="{pdf_download_url}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+                📥 Download PDF Report
+            </a>
         </div>
 
-        <h2>📄 Download Complete Report</h2>
-        <p>Your detailed reconciliation report is ready. Click the button below to download the full PDF report with AI-powered analysis and partner allocations.</p>
-
-        <p style="text-align: center; margin: 30px 0;">
-            <a href="{pdf_download_url}" class="button">📥 Download PDF Report</a>
-        </p>
-
-        <div class="divider"></div>
-
-        <p style="font-size: 14px; color: #718096;">
-            <strong>Note:</strong> The PDF report includes detailed partner allocations, AI-generated insights,
-            and comprehensive volume analysis. The download link will be available for 7 days.
+        <p style="color: #64748b; font-size: 13px;">
+            The PDF includes detailed partner allocations, AI-powered insights, and comprehensive volume analysis. 
+            This link will be available for 7 days.
         </p>
     """
 
-    return get_email_template(body, f"Reconciliation report for {period_month} is ready")
+    return get_email_template(body, f"{period_month} Reconciliation Report Ready")
 
-
-def format_audit_alert_email(audit_data: dict) -> str:
+def format_generic_notification(title: str, message: str, action_url: str = "", action_text: str = "Take Action") -> str:
     """
-    Format audit alert email for flagged entries
+    Format a generic notification email with FlowShare branding.
 
     Args:
-        audit_data: Dictionary with audit details
+        title: The main heading and title of the email.
+        message: The body content of the email. Supports basic markdown.
+        action_url: An optional URL for a call-to-action button.
+        action_text: The text for the action button (e.g., "View Details").
 
     Returns:
-        HTML formatted email body
+        A fully formatted HTML email string.
     """
-    entry_id = audit_data.get('entry_id', '')
-    partner = audit_data.get('partner', '')
-    issues = audit_data.get('issues', [])
-    confidence_score = audit_data.get('confidence_score', 0)
-    ai_reasoning = audit_data.get('ai_reasoning', '')
-
-    # Format issues as HTML list
-    issues_html = '<ul style="margin: 10px 0; padding-left: 20px;">' + ''.join([f'<li style="margin-bottom: 8px;">{issue}</li>' for issue in issues]) + '</ul>'
-
-    # Format AI reasoning with markdown conversion
-    formatted_reasoning = format_markdown_for_email(ai_reasoning)
-
-    body = f"""
-        <h1>⚠️ Production Entry Flagged for Review</h1>
-
-        <p>Hello,</p>
-
-        <p>A production entry has been flagged by the FlowShare Auditor Agent and requires your attention.</p>
-
-        <div class="highlight-box" style="border-left-color: #f59e0b;">
-            <h3>🔍 Flagged Entry Details</h3>
-            <table class="data-table">
-                <tr>
-                    <td><strong>Entry ID:</strong></td>
-                    <td>{entry_id}</td>
-                </tr>
-                <tr>
-                    <td><strong>Partner:</strong></td>
-                    <td>{partner}</td>
-                </tr>
-                <tr>
-                    <td><strong>Confidence Score:</strong></td>
-                    <td>{confidence_score}%</td>
-                </tr>
-            </table>
-        </div>
-
-        <h2>Issues Identified</h2>
-        {issues_html}
-
-        <h2>AI Analysis</h2>
-        <div class="highlight-box">
-            {formatted_reasoning}
-        </div>
-
-        <p style="text-align: center;">
-            <a href="#" class="button">Review Entry →</a>
-        </p>
-
-        <div class="divider"></div>
-
-        <p style="font-size: 14px; color: #718096;">
-            <strong>Action Required:</strong> Please review this entry and make necessary corrections
-            or provide additional information to resolve the flagged issues.
-        </p>
-    """
-
-    return get_email_template(body, f"Production entry {entry_id} flagged for review")
-
-
-def format_generic_notification(title: str, message: str, action_url: str = None) -> str:
-    """
-    Format a generic notification email
-
-    Args:
-        title: Email title
-        message: Main message content (can include markdown)
-        action_url: Optional action button URL
-
-    Returns:
-        HTML formatted email body
-    """
-    action_button = ""
+    # Generate the action button HTML only if an action_url is provided
+    action_button_html = ""
     if action_url:
-        action_button = f'<p style="text-align: center;"><a href="{action_url}" class="button">Take Action →</a></p>'
+        action_button_html = f"""
+            <div style="text-align: center; margin: 35px 0;">
+                <a href="{action_url}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+                    {action_text}
+                </a>
+            </div>
+        """
 
-    # Format message with markdown support
+    # Convert the message from markdown to HTML for email compatibility
     formatted_message = format_markdown_for_email(message)
 
-    body = f"""
+    # Construct the main body of the email
+    body_content = f"""
         <h1>{title}</h1>
-
-        <p>Hello,</p>
-
+        
         {formatted_message}
-
-        {action_button}
-
-        <div class="divider"></div>
-
-        <p style="font-size: 14px; color: #718096;">
-            This is an automated notification from the FlowShare system.
+        
+        {action_button_html}
+        
+        <p style="color: #64748b; font-size: 13px; margin-top: 30px;">
+            This is an automated notification from the FlowShare system. If you believe you received this in error, please disregard this email.
         </p>
     """
 
-    return get_email_template(body, title)
+    # Use the main template function to wrap the content with the header and footer
+    return get_email_template(body_content, preheader=title)
