@@ -472,3 +472,46 @@ def format_reconciliation_pdf_email(reconciliation_data: dict, pdf_download_url:
     """
 
     return get_email_template(body, f"{period_month} Reconciliation Report Ready")
+
+def format_generic_notification(title: str, message: str, action_url: str = "", action_text: str = "Take Action") -> str:
+    """
+    Format a generic notification email with FlowShare branding.
+
+    Args:
+        title: The main heading and title of the email.
+        message: The body content of the email. Supports basic markdown.
+        action_url: An optional URL for a call-to-action button.
+        action_text: The text for the action button (e.g., "View Details").
+
+    Returns:
+        A fully formatted HTML email string.
+    """
+    # Generate the action button HTML only if an action_url is provided
+    action_button_html = ""
+    if action_url:
+        action_button_html = f"""
+            <div style="text-align: center; margin: 35px 0;">
+                <a href="{action_url}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+                    {action_text}
+                </a>
+            </div>
+        """
+
+    # Convert the message from markdown to HTML for email compatibility
+    formatted_message = format_markdown_for_email(message)
+
+    # Construct the main body of the email
+    body_content = f"""
+        <h1>{title}</h1>
+        
+        {formatted_message}
+        
+        {action_button_html}
+        
+        <p style="color: #64748b; font-size: 13px; margin-top: 30px;">
+            This is an automated notification from the FlowShare system. If you believe you received this in error, please disregard this email.
+        </p>
+    """
+
+    # Use the main template function to wrap the content with the header and footer
+    return get_email_template(body_content, preheader=title)
