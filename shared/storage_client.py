@@ -19,9 +19,21 @@ class StorageClient:
         if not firebase_admin._apps:
             raise RuntimeError("Firebase must be initialized before using StorageClient")
 
-        # Get storage bucket
-        self.bucket = storage.bucket(config.PROJECT_ID + ".appspot.com")
-        logger.info("Storage client initialized", bucket=self.bucket.name)
+        # Get storage bucket - use default bucket or custom bucket name
+        bucket_name = os.getenv('FIREBASE_STORAGE_BUCKET', f"{config.PROJECT_ID}.appspot.com")
+
+        try:
+            self.bucket = storage.bucket(bucket_name)
+            logger.info("Storage client initialized", bucket=self.bucket.name)
+        except Exception as e:
+            logger.error(f"Failed to initialize storage bucket: {bucket_name}", error=str(e))
+            # Try without .appspot.com suffix
+            try:
+                self.bucket = storage.bucket(config.PROJECT_ID)
+                logger.info("Storage client initialized with project ID as bucket", bucket=self.bucket.name)
+            except Exception as e2:
+                logger.error("Failed to initialize storage with project ID", error=str(e2))
+                raise RuntimeError(f"Could not initialize Firebase Storage: {str(e)}")
 
     def upload_file(
         self,
