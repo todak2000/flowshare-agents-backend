@@ -19,14 +19,14 @@ FROM python:3.11-slim
 
 # Install security updates and WeasyPrint dependencies
 RUN apt-get update && \
-    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
         libcairo2 \
         libpango-1.0-0 \
         libpangocairo-1.0-0 \
-        libgdk-pixbuf2.0-0 \
+        libgdk-pixbuf-2.0-0 \
         libffi-dev \
-        shared-mime-info && \
+        shared-mime-info \
+        fontconfig && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
