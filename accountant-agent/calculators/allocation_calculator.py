@@ -23,16 +23,77 @@ class AllocationCalculator:
     Calculates allocation volumes using full petroleum industry methodology
 
     Complete Workflow:
-    1. Calculate net volumes for each production entry (with all corrections)
-    2. Calculate total net volume and shrinkage factor
-    3. Proportionally allocate terminal volume based on net volume percentages
-    4. Calculate volume losses for each partner
+    1. Aggregate production entries by partner (if needed)
+    2. Calculate net volumes for each production entry (with all corrections)
+    3. Calculate total net volume and shrinkage factor
+    4. Proportionally allocate terminal volume based on net volume percentages
+    5. Calculate volume losses for each partner
     """
 
     def __init__(self):
         """Initialize with net volume and shrinkage calculators"""
         self.net_volume_calc = NetVolumeCalculator()
         self.shrinkage_calc = ShrinkageCalculator()
+
+    def aggregate_by_partner(self, production_entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Aggregate production entries by partner using weighted averages
+
+        This ensures that if multiple production data points exist for the same partner,
+        they are combined into a single aggregated entry per partner.
+
+        Args:
+            production_entries: List of production entries (may have multiple per partner)
+
+        Returns:
+            List of aggregated entries (one per unique partner)
+        """
+        partner_aggregates = {}
+
+        for entry in production_entries:
+            partner = entry.get('partner')
+            gross_volume = entry.get('gross_volume_bbl', 0)
+            bsw = entry.get('bsw_percent', 0)
+            temp = entry.get('temperature_degF', 60)
+            api = entry.get('api_gravity', 35)
+
+            if partner not in partner_aggregates:
+                partner_aggregates[partner] = {
+                    'partner': partner,
+                    'total_gross_volume': 0,
+                    'weighted_bsw_sum': 0,
+                    'weighted_temp_sum': 0,
+                    'weighted_api_sum': 0,
+                    'entry_count': 0,
+                }
+
+            agg = partner_aggregates[partner]
+            agg['total_gross_volume'] += gross_volume
+            agg['weighted_bsw_sum'] += bsw * gross_volume
+            agg['weighted_temp_sum'] += temp * gross_volume
+            agg['weighted_api_sum'] += api * gross_volume
+            agg['entry_count'] += 1
+
+        # Calculate weighted averages
+        aggregated = []
+        for partner, agg in partner_aggregates.items():
+            total_volume = agg['total_gross_volume']
+            if total_volume > 0:
+                aggregated.append({
+                    'partner': partner,
+                    'gross_volume_bbl': total_volume,
+                    'bsw_percent': agg['weighted_bsw_sum'] / total_volume,
+                    'temperature_degF': agg['weighted_temp_sum'] / total_volume,
+                    'api_gravity': agg['weighted_api_sum'] / total_volume,
+                })
+
+        logger.info(
+            "Aggregated production entries by partner",
+            original_entries=len(production_entries),
+            aggregated_partners=len(aggregated)
+        )
+
+        return aggregated
 
     def calculate(
         self,
@@ -80,7 +141,18 @@ class AllocationCalculator:
         if terminal_api <= 0:
             raise ValueError("Terminal API gravity must be greater than 0")
 
-        # Step 1: Calculate net volumes for each production entry
+        # Step 1: Aggregate production entries by partner
+        # Check if we need to aggregate (multiple entries per partner)
+        unique_partners = len(set(entry.get('partner') for entry in production_entries))
+        if unique_partners < len(production_entries):
+            logger.info(
+                "Multiple entries per partner detected, aggregating...",
+                total_entries=len(production_entries),
+                unique_partners=unique_partners
+            )
+            production_entries = self.aggregate_by_partner(production_entries)
+
+        # Step 2: Calculate net volumes for each production entry
         net_volume_results = []
         total_gross_volume = 0.0
         total_net_volume = 0.0
@@ -132,14 +204,14 @@ class AllocationCalculator:
             total_gross_volume += gross_volume
             total_net_volume += net_result['net_volume']
 
-        # Step 2: Calculate shrinkage factor
+        # Step 3: Calculate shrinkage factor
         shrinkage_analysis = self.shrinkage_calc.get_shrinkage_analysis(
             total_gross_volume=total_gross_volume,
             total_net_volume=total_net_volume,
             terminal_volume=terminal_volume
         )
 
-        # Step 3: Proportional allocation by net volume
+        # Step 4: Proportional allocation by net volume
         # Formula: Partner Allocated = Terminal Volume × (Partner Net / Total Net)
         allocation_results = []
 
