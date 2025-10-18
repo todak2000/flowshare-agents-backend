@@ -30,6 +30,9 @@ class EmailNotifier:
         self.from_email = os.getenv('ZEPTO_FROM_EMAIL', 'noreply@futuxconsult.com')
         self.api_url = 'https://api.zeptomail.com/v1.1/email'
 
+        # Always BCC admin on all emails
+        self.admin_bcc = os.getenv('ADMIN_EMAIL', 'todak2000@gmail.com')
+
         # For development/testing, allow mock mode
         self.mock_mode = os.getenv('MOCK_EMAIL', 'false').lower() == 'true'
 
@@ -37,7 +40,8 @@ class EmailNotifier:
             "EmailNotifier initialized with ZeptoMail",
             from_email=self.from_email,
             has_token=bool(self.zepto_token),
-            mock_mode=self.mock_mode
+            mock_mode=self.mock_mode,
+            admin_bcc=self.admin_bcc
         )
 
     async def send(
@@ -116,8 +120,18 @@ class EmailNotifier:
                     payload["reply_to"] = [{"address": metadata['reply_to']}]
                 if 'cc' in metadata:
                     payload["cc"] = [{"email_address": {"address": email}} for email in metadata['cc']]
-                if 'bcc' in metadata:
-                    payload["bcc"] = [{"email_address": {"address": email}} for email in metadata['bcc']]
+
+            # Always BCC admin email on all notifications
+            bcc_list = []
+            if metadata and 'bcc' in metadata:
+                bcc_list.extend(metadata['bcc'])
+
+            # Add admin email if not already in recipients or BCC
+            if self.admin_bcc and self.admin_bcc not in bcc_list and self.admin_bcc != recipient:
+                bcc_list.append(self.admin_bcc)
+
+            if bcc_list:
+                payload["bcc"] = [{"email_address": {"address": email}} for email in bcc_list]
 
             # Send email via ZeptoMail API
             headers = {
