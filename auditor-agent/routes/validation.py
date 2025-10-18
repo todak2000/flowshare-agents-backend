@@ -100,12 +100,24 @@ async def validate_entry(request: ValidationRequest, req: Request):
 
         response_data = {
             "success": True,
-            "entry_id": request.entry_id,
-            "status": result.status,
-            "flagged": result.flagged,
-            "confidence_score": result.confidence_score,
-            "issues_count": len(result.issues),
-            "timestamp": result.timestamp,
+            "validation_result": {
+                "entry_id": result.entry_id,
+                "status": result.status,
+                "flagged": result.flagged,
+                "issues": [
+                    {
+                        "field": issue.field,
+                        "severity": issue.severity,
+                        "message": issue.message,
+                        "suggestion": issue.suggestion,
+                        "value": issue.value
+                    }
+                    for issue in result.issues
+                ],
+                "ai_analysis": result.ai_analysis,
+                "confidence_score": result.confidence_score,
+                "timestamp": result.timestamp
+            },
             "request_id": request_id
         }
 
