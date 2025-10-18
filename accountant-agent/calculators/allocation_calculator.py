@@ -224,6 +224,8 @@ class AllocationCalculator:
             percentage = 0.0
             if total_net_volume > 0:
                 percentage = (net_volume / total_net_volume) * 100
+                # CAP: No partner should ever get 100% or more in a multi-partner allocation
+                percentage = min(percentage, 99.99999)
 
             # Calculate allocated volume (proportional to net volume)
             allocated_volume = 0.0
