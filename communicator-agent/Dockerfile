@@ -38,10 +38,11 @@ COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 # Copy application code (entire directory structure)
 COPY --chown=appuser:appuser shared/ ./shared/
 COPY --chown=appuser:appuser communicator-agent/*.py ./
-# Agent-specific modules (notifiers and routes)
+# Agent-specific modules (notifiers, routes, templates, and utils)
 COPY --chown=appuser:appuser communicator-agent/notifiers/ ./notifiers/
 COPY --chown=appuser:appuser communicator-agent/routes/ ./routes/
 COPY --chown=appuser:appuser communicator-agent/templates/ ./templates/
+COPY --chown=appuser:appuser communicator-agent/utils/ ./utils/
 # Switch to non-root user
 USER appuser
 
