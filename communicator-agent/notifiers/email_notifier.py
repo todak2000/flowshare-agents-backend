@@ -82,7 +82,8 @@ class EmailNotifier:
             # Prepare ZeptoMail payload
             payload = {
                 "from": {
-                    "address": self.from_email
+                    "address": self.from_email,
+                    "name": "FlowShare Communication Agent"
                 },
                 "to": [
                     {
@@ -122,7 +123,7 @@ class EmailNotifier:
                     headers=headers
                 )
 
-                if response.status_code == 200:
+                if response.status_code == 201:
                     logger.info("Email sent successfully via ZeptoMail", recipient=recipient)
                     return True
                 else:
