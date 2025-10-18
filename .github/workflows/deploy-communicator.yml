@@ -66,6 +66,7 @@ jobs:
           env_vars: |
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
+            FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}
             GCP_REGION=europe-west1
             ZEPTO_TOKEN=${{ secrets.ZEPTO_TOKEN }}
             ZEPTO_FROM_EMAIL=${{ secrets.ZEPTO_FROM_EMAIL }}

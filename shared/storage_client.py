@@ -32,7 +32,7 @@ class StorageClient:
                 self.bucket = storage.bucket(config.PROJECT_ID)
                 logger.info("Storage client initialized with project ID as bucket", bucket=self.bucket.name)
             except Exception as e2:
-                logger.error(f"Failed to initialize storage with project ID", error=str(e2))
+                logger.error("Failed to initialize storage with project ID", error=str(e2))
                 raise RuntimeError(f"Could not initialize Firebase Storage: {str(e)}")
 
     def upload_file(
