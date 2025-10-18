@@ -211,42 +211,112 @@ class AllocationCalculator:
             terminal_volume=terminal_volume
         )
 
-        # Step 4: Proportional allocation by net volume
+        # Step 4: Proportional allocation by net volume with percentage capping and rebalancing
         # Formula: Partner Allocated = Terminal Volume × (Partner Net / Total Net)
-        allocation_results = []
 
+        # First pass: Calculate raw allocations
+        raw_allocations = []
         for result in net_volume_results:
-            partner = result['partner']
-            gross_volume = result['gross_volume']
-            net_volume = result['net_volume']
+            raw_percentage = (result['net_volume'] / total_net_volume) * 100 if total_net_volume > 0 else 0
+            raw_allocated = terminal_volume * (result['net_volume'] / total_net_volume) if total_net_volume > 0 else 0
 
-            # Calculate partner percentage based on net volume
-            percentage = 0.0
-            if total_net_volume > 0:
-                percentage = (net_volume / total_net_volume) * 100
-
-            # Calculate allocated volume (proportional to net volume)
-            allocated_volume = 0.0
-            if total_net_volume > 0:
-                allocated_volume = terminal_volume * (net_volume / total_net_volume)
-
-            # Calculate volume loss (gross - allocated)
-            volume_loss = gross_volume - allocated_volume
-
-            allocation_results.append({
-                'partner': partner,
-                'gross_volume': round(gross_volume, 2),
-                'net_volume': round(net_volume, 2),
-                'allocated_volume': round(allocated_volume, 2),
-                'percentage': round(percentage, 2),
-                'volume_loss': round(volume_loss, 2),
+            raw_allocations.append({
+                'partner': result['partner'],
+                'gross_volume': result['gross_volume'],
+                'net_volume': result['net_volume'],
+                'raw_percentage': raw_percentage,
+                'raw_allocated': raw_allocated,
                 'water_cut_factor': result['water_cut_factor'],
                 'temp_correction': result['temp_correction'],
                 'api_correction': result['api_correction'],
-                'bsw_deduction': round(result['bsw_deduction'], 2),
-                'temperature_adjustment': round(result['temperature_adjustment'], 2),
-                'api_adjustment': round(result['api_adjustment'], 2)
+                'bsw_deduction': result['bsw_deduction'],
+                'temperature_adjustment': result['temperature_adjustment'],
+                'api_adjustment': result['api_adjustment']
             })
+
+        # Second pass: Cap percentages and redistribute excess
+        MAX_PERCENTAGE = 99.99999
+        capped_partners = []
+        uncapped_partners = []
+        total_capped_allocation = 0.0
+
+        for alloc in raw_allocations:
+            if alloc['raw_percentage'] > MAX_PERCENTAGE:
+                # This partner exceeds the cap
+                capped_percentage = MAX_PERCENTAGE
+                capped_allocation = terminal_volume * (capped_percentage / 100)
+                alloc['capped'] = True
+                alloc['final_percentage'] = capped_percentage
+                alloc['final_allocated'] = capped_allocation
+                total_capped_allocation += capped_allocation
+                capped_partners.append(alloc)
+            else:
+                alloc['capped'] = False
+                uncapped_partners.append(alloc)
+
+        # Calculate remaining volume to distribute among uncapped partners
+        remaining_volume = terminal_volume - total_capped_allocation
+
+        # Calculate total net volume for uncapped partners
+        total_uncapped_net_volume = sum(p['net_volume'] for p in uncapped_partners)
+
+        # Distribute remaining volume proportionally among uncapped partners
+        for alloc in uncapped_partners:
+            if total_uncapped_net_volume > 0:
+                alloc['final_allocated'] = remaining_volume * (alloc['net_volume'] / total_uncapped_net_volume)
+                alloc['final_percentage'] = (alloc['final_allocated'] / terminal_volume) * 100
+            else:
+                alloc['final_allocated'] = 0.0
+                alloc['final_percentage'] = 0.0
+
+        # Combine all allocations and create final results
+        all_allocations = capped_partners + uncapped_partners
+        allocation_results = []
+
+        for alloc in all_allocations:
+            allocation_results.append({
+                'partner': alloc['partner'],
+                'gross_volume': alloc['gross_volume'],
+                'net_volume': alloc['net_volume'],
+                'allocated_volume': alloc['final_allocated'],
+                'percentage': alloc['final_percentage'],
+                'water_cut_factor': alloc['water_cut_factor'],
+                'temp_correction': alloc['temp_correction'],
+                'api_correction': alloc['api_correction'],
+                'bsw_deduction': alloc['bsw_deduction'],
+                'temperature_adjustment': alloc['temperature_adjustment'],
+                'api_adjustment': alloc['api_adjustment']
+            })
+
+        # Final adjustment: Ensure allocated volumes sum exactly to terminal volume
+        total_allocated_before_rounding = sum(a['allocated_volume'] for a in allocation_results)
+        rounding_difference = terminal_volume - total_allocated_before_rounding
+
+        # Add rounding difference to the largest allocation (most accurate)
+        if rounding_difference != 0 and len(allocation_results) > 0:
+            largest_idx = max(range(len(allocation_results)),
+                            key=lambda i: allocation_results[i]['allocated_volume'])
+            allocation_results[largest_idx]['allocated_volume'] += rounding_difference
+
+        # Now round all values and recalculate percentages and losses based on final volumes
+        for alloc in allocation_results:
+            alloc['allocated_volume'] = round(alloc['allocated_volume'], 2)
+            alloc['percentage'] = round((alloc['allocated_volume'] / terminal_volume) * 100, 2)
+            alloc['volume_loss'] = round(alloc['gross_volume'] - alloc['allocated_volume'], 2)
+            alloc['gross_volume'] = round(alloc['gross_volume'], 2)
+            alloc['net_volume'] = round(alloc['net_volume'], 2)
+            alloc['bsw_deduction'] = round(alloc['bsw_deduction'], 2)
+            alloc['temperature_adjustment'] = round(alloc['temperature_adjustment'], 2)
+            alloc['api_adjustment'] = round(alloc['api_adjustment'], 2)
+
+        # Log rebalancing if it occurred
+        if len(capped_partners) > 0:
+            logger.info(
+                "Allocation rebalancing applied",
+                capped_partners=[p['partner'] for p in capped_partners],
+                capped_at_percentage=MAX_PERCENTAGE,
+                redistributed_to=[p['partner'] for p in uncapped_partners]
+            )
 
         # Validate allocations sum correctly
         total_allocated = sum(a['allocated_volume'] for a in allocation_results)
