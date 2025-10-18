@@ -283,11 +283,13 @@ def generate_reconciliation_pdf_html(reconciliation_data: dict, ai_summary: str 
     # AI Summary section
     ai_section = ""
     if ai_summary:
+        # Convert newlines to HTML breaks (can't use backslash in f-string)
+        formatted_summary = ai_summary.replace('\n', '<br>')
         ai_section = f"""
         <div class="section">
             <div class="ai-summary">
                 <h3>🤖 Executive Summary</h3>
-                {ai_summary.replace('\n', '<br>')}
+                {formatted_summary}
             </div>
         </div>
         """
