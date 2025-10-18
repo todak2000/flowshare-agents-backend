@@ -101,7 +101,7 @@ async def calculate_allocations(request: AllocationRequest, req: Request):
         response_data = {
             "success": True,
             "receipt_id": request.receipt_id,
-            "allocations": [allocation.dict() for allocation in result.allocations],
+            "allocations": result.allocations if isinstance(result.allocations, list) else [allocation.dict() for allocation in result.allocations],
             "total_allocated": result.total_allocated,
             "timestamp": result.timestamp,
             "request_id": request_id

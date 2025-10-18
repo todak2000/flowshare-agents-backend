@@ -178,7 +178,7 @@ class AccountantAgent:
 
     def _update_firestore(self, receipt_id: str, result: AllocationResult) -> None:
         """
-        Update terminal receipt in Firestore
+        Update terminal receipt in Firestore (creates if doesn't exist)
 
         Args:
             receipt_id: Receipt identifier
@@ -191,7 +191,8 @@ class AccountantAgent:
             'allocated_at': result.timestamp
         }
 
-        firestore_client.update_document(
+        # Use upsert to create or update the document
+        firestore_client.upsert_document(
             collection=config.COLLECTION_TERMINAL_RECEIPTS,
             doc_id=receipt_id,
             data=update_data

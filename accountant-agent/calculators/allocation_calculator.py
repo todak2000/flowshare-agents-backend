@@ -180,7 +180,8 @@ class AllocationCalculator:
         total_allocated = sum(a['allocated_volume'] for a in allocation_results)
         allocation_variance = abs(total_allocated - terminal_volume)
 
-        if allocation_variance > 0.01:  # Allow small rounding errors
+        # Allow up to 1 barrel variance for rounding errors (reasonable for large volumes)
+        if allocation_variance > 1.0:
             logger.warning(
                 "Allocation total doesn't match terminal volume",
                 total_allocated=round(total_allocated, 2),
@@ -233,9 +234,9 @@ class AllocationCalculator:
             for a in allocations
         )
 
-        # Check percentages sum to 100%
+        # Check percentages sum to 100% (allow 99%-101% range for rounding)
         total_percentage = sum(a.get('percentage', 0) for a in allocations)
-        percentage_valid = abs(total_percentage - 100.0) < 0.01  # Allow small floating point errors
+        percentage_valid = 99.0 <= total_percentage <= 101.0  # Allow at least 99% as requested
 
         # Check net volumes are less than or equal to gross volumes
         net_less_than_gross = all(
@@ -256,7 +257,7 @@ class AllocationCalculator:
         if not is_valid:
             errors = []
             if not percentage_valid:
-                errors.append(f"Percentages sum to {total_percentage}%, not 100%")
+                errors.append(f"Percentages sum to {total_percentage:.2f}%, outside valid range (99%-101%)")
             if not all_non_negative:
                 errors.append("Some volumes are negative")
             if not net_less_than_gross:

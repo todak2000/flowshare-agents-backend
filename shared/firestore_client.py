@@ -65,6 +65,16 @@ class FirestoreClient:
             logger.error(f"Error creating document: {e}")
             raise
 
+    def upsert_document(self, collection: str, doc_id: str, data: Dict[str, Any]) -> None:
+        """Create or update a document (upsert operation)"""
+        try:
+            doc_ref = self.db.collection(collection).document(doc_id)
+            doc_ref.set(data, merge=True)
+            logger.info(f"Upserted document {doc_id} in {collection}")
+        except Exception as e:
+            logger.error(f"Error upserting document: {e}")
+            raise
+
     def query_documents(
         self,
         collection: str,
