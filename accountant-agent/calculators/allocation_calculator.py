@@ -257,18 +257,21 @@ class AllocationCalculator:
         for alloc in raw_allocations:
             alloc['allocated_volume'] = terminal_volume * (alloc['final_percentage'] / 100)
 
-        # CRITICAL CONSTRAINT: Allocated volume CANNOT exceed input (gross) volume
-        # Cap each allocation at their input volume
+        # CRITICAL CONSTRAINT: Allocated volume CANNOT exceed 99.9% of input volume
+        # Cap each allocation at 99.9% of their input volume (ensure minimum 0.1% loss)
+        MAX_ALLOCATION_FACTOR = 0.999  # 99.9%
         volume_capped_count = 0
         for alloc in raw_allocations:
-            if alloc['allocated_volume'] > alloc['gross_volume']:
+            max_allocation = alloc['gross_volume'] * MAX_ALLOCATION_FACTOR
+            if alloc['allocated_volume'] > max_allocation:
                 logger.warning(
-                    "Partner allocation exceeds input, capping to input volume",
+                    "Partner allocation exceeds 99.9% of input, capping",
                     partner=alloc['partner'],
                     calculated_allocation=round(alloc['allocated_volume'], 2),
-                    input_volume=round(alloc['gross_volume'], 2)
+                    input_volume=round(alloc['gross_volume'], 2),
+                    max_allowed=round(max_allocation, 2)
                 )
-                alloc['allocated_volume'] = alloc['gross_volume']
+                alloc['allocated_volume'] = max_allocation
                 volume_capped_count += 1
 
         # Round allocated volumes
@@ -281,23 +284,24 @@ class AllocationCalculator:
 
         # If there's excess terminal volume after capping, try to redistribute
         if volume_difference > 0:
-            # Find partners with room (allocated < input)
+            # Find partners with room (allocated < 99.9% of input)
             partners_with_room = [
                 alloc for alloc in raw_allocations
-                if alloc['allocated_volume'] < alloc['gross_volume']
+                if alloc['allocated_volume'] < alloc['gross_volume'] * MAX_ALLOCATION_FACTOR
             ]
 
             if partners_with_room:
-                # Calculate how much room each has
+                # Calculate how much room each has (up to 99.9% of input)
                 total_room = sum(
-                    alloc['gross_volume'] - alloc['allocated_volume']
+                    (alloc['gross_volume'] * MAX_ALLOCATION_FACTOR) - alloc['allocated_volume']
                     for alloc in partners_with_room
                 )
 
-                # Distribute proportionally to available room, but don't exceed input volumes
+                # Distribute proportionally to available room, but don't exceed 99.9% of input
                 remaining_difference = volume_difference
                 for alloc in partners_with_room:
-                    partner_room = alloc['gross_volume'] - alloc['allocated_volume']
+                    max_allocation = alloc['gross_volume'] * MAX_ALLOCATION_FACTOR
+                    partner_room = max_allocation - alloc['allocated_volume']
                     if total_room > 0 and remaining_difference > 0:
                         additional = min(
                             remaining_difference * (partner_room / total_room),
