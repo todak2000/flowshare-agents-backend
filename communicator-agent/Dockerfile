@@ -17,9 +17,16 @@ RUN sed -i 's|../shared/requirements.txt|shared/requirements.txt|g' requirements
 # Production image
 FROM python:3.11-slim
 
-# Install security updates
+# Install security updates and WeasyPrint dependencies
 RUN apt-get update && \
     apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        libcairo2 \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libgdk-pixbuf2.0-0 \
+        libffi-dev \
+        shared-mime-info && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

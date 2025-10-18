@@ -11,17 +11,19 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from shared.models import Notification, NotificationStatus, NotificationType
 from shared.firestore_client import firestore_client
+from shared.storage_client import storage_client
 from shared.config import config
 from shared.logger import logger
 from shared.cache import SimpleCache
 from shared.utils import utc_now
 from typing import Dict, Any, Optional
 import asyncio
+import os
 
 # Import agent-specific notifiers
 from notifiers import EmailNotifier, SMSNotifier, WebhookNotifier
-from templates import format_ai_reconciliation_report
-from utils import ai_report_generator
+from templates import format_ai_reconciliation_report, format_reconciliation_pdf_email
+from utils import ai_report_generator, pdf_generator
 
 
 class CommunicatorAgent:
@@ -140,7 +142,7 @@ class CommunicatorAgent:
             if notification.type == NotificationType.EMAIL:
                 # Check if this is a reconciliation report (has reconciliation_data in metadata)
                 if notification.metadata and 'reconciliation_data' in notification.metadata:
-                    logger.info("Generating AI-powered reconciliation report")
+                    logger.info("Generating PDF reconciliation report")
 
                     reconciliation_data = notification.metadata.get('reconciliation_data', {})
 
@@ -149,15 +151,48 @@ class CommunicatorAgent:
                         reconciliation_data
                     )
 
-                    # Format email with AI summary and full allocation details
-                    body = format_ai_reconciliation_report(reconciliation_data, ai_summary)
-
-                    success = await self._email_notifier.send(
-                        recipient=notification.recipient,
-                        subject=notification.subject or "FlowShare Reconciliation Report",
-                        body=body,
-                        metadata=notification.metadata
+                    # Generate PDF
+                    pdf_path = await pdf_generator.generate_reconciliation_pdf(
+                        reconciliation_data,
+                        ai_summary
                     )
+
+                    try:
+                        # Upload PDF to Firebase Storage
+                        period_month = reconciliation_data.get('period_month', 'Unknown').replace(' ', '_')
+                        storage_path = f"reconciliation_reports/{period_month}/{os.path.basename(pdf_path)}"
+
+                        pdf_url = storage_client.upload_file(
+                            local_path=pdf_path,
+                            storage_path=storage_path,
+                            content_type='application/pdf',
+                            public=False  # Use signed URL for security
+                        )
+
+                        # Format email with download link
+                        body = format_reconciliation_pdf_email(reconciliation_data, pdf_url)
+
+                        success = await self._email_notifier.send(
+                            recipient=notification.recipient,
+                            subject=notification.subject or f"FlowShare {period_month} Reconciliation Report",
+                            body=body,
+                            metadata=notification.metadata
+                        )
+
+                        # Clean up local PDF file
+                        if os.path.exists(pdf_path):
+                            os.remove(pdf_path)
+
+                    except Exception as e:
+                        logger.error("Failed to generate/upload PDF, falling back to inline report", error=str(e))
+                        # Fallback to inline email if PDF generation fails
+                        body = format_ai_reconciliation_report(reconciliation_data, ai_summary)
+                        success = await self._email_notifier.send(
+                            recipient=notification.recipient,
+                            subject=notification.subject or "FlowShare Reconciliation Report",
+                            body=body,
+                            metadata=notification.metadata
+                        )
                 else:
                     # Regular email
                     success = await self._email_notifier.send(
@@ -234,13 +269,32 @@ class CommunicatorAgent:
 
     def _log_activity(self, notification_id: str, notification: Notification, execution_time: float) -> None:
         """
-        Log agent activity to Firestore
+        Log agent activity to Firestore with sanitized details
 
         Args:
             notification_id: Notification identifier
             notification: Notification object
             execution_time: Execution time in milliseconds
         """
+        # Sanitize recipient (hide middle part of email)
+        recipient = notification.recipient
+        if '@' in recipient:
+            local, domain = recipient.split('@')
+            if len(local) > 3:
+                sanitized_recipient = f"{local[:2]}***{local[-1]}@{domain}"
+            else:
+                sanitized_recipient = f"{local[0]}***@{domain}"
+        else:
+            sanitized_recipient = f"{recipient[:3]}***"
+
+        # Determine action details based on metadata
+        action_details = "Email notification sent"
+        if notification.metadata and 'reconciliation_data' in notification.metadata:
+            recon_data = notification.metadata['reconciliation_data']
+            period = recon_data.get('period_month', 'Unknown Period')
+            partners_count = recon_data.get('allocations_count', 0)
+            action_details = f"Reconciliation report for {period} sent to {partners_count} partner(s)"
+
         log_data = {
             'agent_name': self.name,
             'action': 'send_notification',
@@ -248,11 +302,14 @@ class CommunicatorAgent:
             'input_data': {
                 'notification_id': notification_id,
                 'type': notification.type,
-                'recipient': notification.recipient
+                'recipient': sanitized_recipient,
+                'subject': notification.subject[:50] + '...' if notification.subject and len(notification.subject) > 50 else notification.subject
             },
             'output_data': {
                 'status': notification.status,
-                'error': notification.error_message
+                'error': notification.error_message,
+                'details': action_details,
+                'delivery_method': notification.type
             },
             'execution_time_ms': round(execution_time, 2),
             'timestamp': utc_now().isoformat()
