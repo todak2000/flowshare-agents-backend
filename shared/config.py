@@ -23,6 +23,8 @@ class Config:
     COLLECTION_PRODUCTION_ENTRIES: str = "production_entries"
     COLLECTION_TERMINAL_RECEIPTS: str = "terminal_receipts"
     COLLECTION_RECONCILIATION_RUNS: str = "reconciliation_runs"
+    COLLECTION_RECONCILIATIONS: str = "reconciliation_runs"  # Alias for COLLECTION_RECONCILIATION_RUNS
+    COLLECTION_ALLOCATIONS: str = "allocation_results"
     COLLECTION_NOTIFICATIONS: str = "notifications"
     COLLECTION_AGENT_LOGS: str = "agent_logs"
 
