@@ -118,38 +118,61 @@ async def trigger_reconciliation(request: ReconciliationRequest, req: Request):
         # Get unique partners and collect stakeholder emails
         unique_partners = list(set(a.get('partner', '') for a in allocations))
         logger.info(f"Collecting stakeholder emails for {len(unique_partners)} partners")
+        logger.info(f"Partners: {unique_partners}")
 
         # Collect all stakeholders
         stakeholder_emails = set()
 
+        # ALWAYS include default admin email
+        DEFAULT_ADMIN_EMAIL = "todak2000@gmail.com"
+        stakeholder_emails.add(DEFAULT_ADMIN_EMAIL)
+        logger.info(f"✅ Added default admin email: {DEFAULT_ADMIN_EMAIL}")
+
         # 1. Get all JV coordinators
+        logger.info("Querying for JV coordinators from appUsers collection...")
         jv_coordinators = firestore_client.query_documents(
-            collection='users',
+            collection='appUsers',
             filters=[('role', '==', 'jv_coordinator')]
         )
-        stakeholder_emails.update(u.get('email') for u in jv_coordinators if u.get('email'))
-        logger.info(f"Added {len(jv_coordinators)} JV coordinators")
+        jv_coordinator_emails = [u.get('email') for u in jv_coordinators if u.get('email')]
+        stakeholder_emails.update(jv_coordinator_emails)
+        logger.info(f"Found {len(jv_coordinators)} JV coordinators: {jv_coordinator_emails}")
 
         # 2. Get field operators and JV partners for each partner
         for partner_name in unique_partners:
+            logger.info(f"Querying for field operators and JV partners for partner: {partner_name}")
+
             field_ops = firestore_client.query_documents(
-                collection='users',
+                collection='appUsers',
                 filters=[
                     ('role', '==', 'field_operator'),
                     ('company', '==', partner_name)
                 ]
             )
+            field_op_emails = [u.get('email') for u in field_ops if u.get('email')]
+            logger.info(f"Found {len(field_ops)} field operators for {partner_name}: {field_op_emails}")
+
             jv_partners = firestore_client.query_documents(
-                collection='users',
+                collection='appUsers',
                 filters=[
                     ('role', '==', 'jv_partner'),
                     ('company', '==', partner_name)
                 ]
             )
-            stakeholder_emails.update(u.get('email') for u in field_ops if u.get('email'))
-            stakeholder_emails.update(u.get('email') for u in jv_partners if u.get('email'))
+            jv_partner_emails = [u.get('email') for u in jv_partners if u.get('email')]
+            logger.info(f"Found {len(jv_partners)} JV partners for {partner_name}: {jv_partner_emails}")
 
-        logger.info(f"Total unique stakeholder emails: {len(stakeholder_emails)}")
+            stakeholder_emails.update(field_op_emails)
+            stakeholder_emails.update(jv_partner_emails)
+
+        logger.info(f"Total unique stakeholder emails collected (including admin): {len(stakeholder_emails)}")
+
+        # Log all emails that will receive notifications
+        logger.info(f"📧 STAKEHOLDER EMAILS TO NOTIFY ({len(stakeholder_emails)}):")
+        for email in sorted(stakeholder_emails):
+            logger.info(f"  - {email}")
+
+        logger.info(f"Starting notification process for {len(stakeholder_emails)} stakeholders...")
 
         # Send notifications to all stakeholders
         notification_results = []
