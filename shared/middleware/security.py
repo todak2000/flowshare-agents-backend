@@ -8,6 +8,9 @@ from fastapi import Request
 # CORS - Restrict to specific origins
 ALLOWED_ORIGINS = [
     "https://flowshare-197665497260.europe-west1.run.app",
+    "https://communicator-agent-g5zmzlktoa-ew.a.run.app",
+    "https://accountant-agent-g5zmzlktoa-ew.a.run.app",
+    "https://auditor-agent-g5zmzlktoa-ew.a.run.app",
     "http://localhost:3000",
     "http://localhost:3001",  # For local testing
 ]
