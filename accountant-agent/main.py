@@ -28,8 +28,8 @@ from shared.middleware import (
 # Import shared health check route
 from shared.routes import create_health_router
 
-# Import agent-specific allocation route
-from routes import allocation_router
+# Import agent-specific routes
+from routes import allocation_router, reconciliation_router
 
 
 # ============================================================================
@@ -106,8 +106,9 @@ health_router = create_health_router(
 )
 app.include_router(health_router)
 
-# Allocation routes (agent-specific)
+# Agent routes
 app.include_router(allocation_router)
+app.include_router(reconciliation_router)
 
 # ============================================================================
 # EXCEPTION HANDLERS

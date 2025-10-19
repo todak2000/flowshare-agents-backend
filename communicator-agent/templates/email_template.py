@@ -2,6 +2,7 @@
 Professional Email Templates for FlowShare
 Simplified and user-friendly design
 """
+import os
 
 
 def get_email_template(body_content: str, preheader: str = "") -> str:
@@ -472,6 +473,64 @@ def format_reconciliation_pdf_email(reconciliation_data: dict, pdf_download_url:
     """
 
     return get_email_template(body, f"{period_month} Reconciliation Report Ready")
+
+
+def format_reconciliation_login_notification(reconciliation_data: dict, login_url: str = None) -> str:
+    """
+    Format reconciliation notification email directing users to log in
+
+    Args:
+        reconciliation_data: Dictionary with reconciliation details
+        login_url: Optional URL to the login page (defaults to reconciliation page)
+
+    Returns:
+        HTML formatted email body prompting login
+    """
+    period_month = reconciliation_data.get('period_month', '')
+    period_start = reconciliation_data.get('period_start', '')
+    period_end = reconciliation_data.get('period_end', '')
+
+    # Default to reconciliation page
+    if not login_url:
+        frontend_url = os.getenv('FRONTEND_URL', 'https://flowshare-frontend.web.app')
+        login_url = f"{frontend_url}/reconciliation"
+
+    body = f"""
+        <h1>📊 {period_month} Reconciliation Report Ready</h1>
+
+        <p>Your detailed reconciliation report for <strong>{period_start} to {period_end}</strong> has been completed and is now available.</p>
+
+        <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 6px;">
+            <p style="margin: 0; color: #1e40af; font-size: 14px;">
+                <strong>🔐 Secure Access Required</strong><br>
+                To view your reconciliation report, AI-powered insights, and detailed partner allocations, please log in to your FlowShare account.
+            </p>
+        </div>
+
+        <div style="text-align: center; margin: 35px 0;">
+            <a href="{login_url}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+                🚀 View Report in FlowShare
+            </a>
+        </div>
+
+        <div style="background-color: #f8fafc; border-radius: 6px; padding: 20px; margin: 25px 0;">
+            <h3 style="margin-top: 0; color: #334155; font-size: 15px;">What's in your report:</h3>
+            <ul style="color: #64748b; font-size: 14px; margin: 10px 0; padding-left: 20px;">
+                <li>🤖 AI-generated executive summary and insights</li>
+                <li>📊 Detailed partner volume allocations</li>
+                <li>📈 Shrinkage analysis and calculations</li>
+                <li>💾 PDF and CSV export options</li>
+            </ul>
+        </div>
+
+        <p style="color: #64748b; font-size: 13px;">
+            All reports are securely stored in your FlowShare account and accessible anytime.
+            If you have any questions, please contact your JV coordinator.
+        </p>
+    """
+
+    return get_email_template(body, f"{period_month} Reconciliation Report Ready")
+
 
 def format_generic_notification(title: str, message: str, action_url: str = "", action_text: str = "Take Action") -> str:
     """
