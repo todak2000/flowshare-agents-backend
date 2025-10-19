@@ -25,8 +25,8 @@ from shared.middleware import (
     ALLOWED_ORIGINS
 )
 
-# Import shared health check route
-from shared.routes import create_health_router
+# Import shared health check route and agent logs
+from shared.routes import create_health_router, agent_logs_router
 
 # Import agent-specific notification route
 from routes import notification_router
@@ -105,6 +105,9 @@ health_router = create_health_router(
     agent_getter=get_communicator_agent
 )
 app.include_router(health_router)
+
+# Agent logs routes (shared - for command center)
+app.include_router(agent_logs_router)
 
 # Notification routes (agent-specific)
 app.include_router(notification_router)
