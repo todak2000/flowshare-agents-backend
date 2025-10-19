@@ -1,12 +1,15 @@
 """
 Helper functions to call other agents
 """
-import os
 import httpx
 from typing import Dict, Any
 from shared.logger import logger
+from shared.config import config
 
-COMMUNICATOR_URL = os.getenv('COMMUNICATOR_AGENT_URL', 'http://localhost:8083')
+COMMUNICATOR_URL = config.COMMUNICATOR_AGENT_URL or 'http://localhost:8083'
+
+# Log the URL being used on module load
+logger.info(f"Communicator Agent URL configured: {COMMUNICATOR_URL}")
 
 
 async def send_notification_to_communicator(
@@ -29,10 +32,19 @@ async def send_notification_to_communicator(
     Returns:
         Response from Communicator Agent
     """
+    notify_url = f"{COMMUNICATOR_URL}/notify"
+
     try:
+        logger.info(
+            "Calling Communicator Agent",
+            url=notify_url,
+            recipient=recipient,
+            subject=subject
+        )
+
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
-                f"{COMMUNICATOR_URL}/notify",
+                notify_url,
                 json={
                     "notification_id": notification_id,
                     "notification_data": {
@@ -50,13 +62,19 @@ async def send_notification_to_communicator(
             if not response.is_success:
                 logger.error(
                     f"Communicator Agent error: {response.status_code}",
+                    url=notify_url,
                     response_text=response.text
                 )
                 return {"success": False, "error": response.text}
 
             data = response.json()
+            logger.info("Communicator Agent responded successfully", recipient=recipient)
             return data
 
     except Exception as e:
-        logger.error(f"Failed to call Communicator Agent: {e}")
+        logger.error(
+            f"Failed to call Communicator Agent: {e}",
+            url=notify_url,
+            error_type=type(e).__name__
+        )
         return {"success": False, "error": str(e)}
