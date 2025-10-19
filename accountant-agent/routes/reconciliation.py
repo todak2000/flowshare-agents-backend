@@ -174,9 +174,9 @@ async def trigger_reconciliation(request: ReconciliationRequest, req: Request):
 
         logger.info(f"Starting notification process for {len(stakeholder_emails)} stakeholders...")
 
-        # Send notifications to all stakeholders
-        notification_results = []
-        for index, email in enumerate(stakeholder_emails):
+        # Send notifications to all stakeholders IN PARALLEL for better performance
+        async def send_single_notification(index: int, email: str):
+            """Send notification to a single email and return result"""
             try:
                 result = await send_notification_to_communicator(
                     notification_id=f"notif_{request.reconciliation_id}_{index}",
@@ -185,17 +185,24 @@ async def trigger_reconciliation(request: ReconciliationRequest, req: Request):
                     body=f"Reconciliation report for {period_month}",
                     reconciliation_data=reconciliation_data
                 )
-                notification_results.append({
+                return {
                     'email': email,
                     'success': result.get('success', False)
-                })
+                }
             except Exception as e:
                 logger.error(f"Failed to send notification to {email}: {e}")
-                notification_results.append({
+                return {
                     'email': email,
                     'success': False,
                     'error': str(e)
-                })
+                }
+
+        # Send all notifications in parallel using asyncio.gather
+        notification_tasks = [
+            send_single_notification(index, email)
+            for index, email in enumerate(stakeholder_emails)
+        ]
+        notification_results = await asyncio.gather(*notification_tasks)
 
         successful_notifications = sum(1 for r in notification_results if r.get('success'))
         logger.info(
