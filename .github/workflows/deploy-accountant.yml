@@ -73,7 +73,7 @@ jobs:
             --cpu-throttling
             --execution-environment=gen2
             --service-account=${{ secrets.CLOUD_RUN_SA_EMAIL }}
-            --set-env-vars GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=europe-west1
+            --set-env-vars GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=europe-west1,COMMUNICATOR_AGENT_URL=${{ secrets.COMMUNICATOR_AGENT_URL }}
 
       # 8. Output the URL of the deployed service
       - name: Show Deployed URL
