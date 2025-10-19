@@ -64,7 +64,7 @@ jobs:
           flags: |
             --memory=1Gi
             --cpu=2
-            --timeout=60
+            --timeout=300
             --min-instances=0
             --max-instances=20
             --concurrency=50
