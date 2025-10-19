@@ -249,10 +249,7 @@ def get_email_template(body_content: str, preheader: str = "") -> str:
     </div>
 
     <div class="email-container">
-        <div class="header">
-            <div class="logo">FlowShare</div>
-            <div class="logo-subtitle">Joint Venture Production Allocation</div>
-        </div>
+
 
         <div class="content">
             {body_content}
@@ -492,14 +489,11 @@ def format_reconciliation_login_notification(reconciliation_data: dict, login_ur
 
     # Default to reconciliation page
     if not login_url:
-        frontend_url = os.getenv('FRONTEND_URL', 'https://flowshare-frontend.web.app')
-        login_url = f"{frontend_url}/reconciliation"
+        frontend_url = os.getenv('FRONTEND_URL', 'https://flowshare-197665497260.europe-west1.run.app')
+        login_url = f"{frontend_url}/onboarding/login"
 
     body = f"""
-        <h1>📊 {period_month} Reconciliation Report Ready</h1>
-
-        <p>Your detailed reconciliation report for <strong>{period_start} to {period_end}</strong> has been completed and is now available.</p>
-
+        
         <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 6px;">
             <p style="margin: 0; color: #1e40af; font-size: 14px;">
                 <strong>🔐 Secure Access Required</strong><br>
@@ -511,16 +505,6 @@ def format_reconciliation_login_notification(reconciliation_data: dict, login_ur
             <a href="{login_url}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
                 🚀 View Report in FlowShare
             </a>
-        </div>
-
-        <div style="background-color: #f8fafc; border-radius: 6px; padding: 20px; margin: 25px 0;">
-            <h3 style="margin-top: 0; color: #334155; font-size: 15px;">What's in your report:</h3>
-            <ul style="color: #64748b; font-size: 14px; margin: 10px 0; padding-left: 20px;">
-                <li>🤖 AI-generated executive summary and insights</li>
-                <li>📊 Detailed partner volume allocations</li>
-                <li>📈 Shrinkage analysis and calculations</li>
-                <li>💾 PDF and CSV export options</li>
-            </ul>
         </div>
 
         <p style="color: #64748b; font-size: 13px;">
