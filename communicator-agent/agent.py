@@ -30,7 +30,7 @@ except Exception as e:
 
 # Import agent-specific notifiers
 from notifiers import EmailNotifier, SMSNotifier, WebhookNotifier
-from templates import format_ai_reconciliation_report, format_reconciliation_pdf_email
+from templates import format_ai_reconciliation_report, format_reconciliation_pdf_email, format_reconciliation_login_notification
 from utils import ai_report_generator
 
 # Optional PDF generation (requires system libraries)
@@ -167,67 +167,19 @@ class CommunicatorAgent:
                 if notification.metadata and 'reconciliation_data' in notification.metadata:
                     reconciliation_data = notification.metadata.get('reconciliation_data', {})
 
-                    # Generate AI summary
-                    ai_summary = await ai_report_generator.generate_reconciliation_summary(
-                        reconciliation_data
+                    # Send login notification instead of full report
+                    period_month = reconciliation_data.get('period_month', 'Unknown')
+                    logger.info(f"Sending reconciliation login notification for {period_month}")
+
+                    # Format email directing users to log in
+                    body = format_reconciliation_login_notification(reconciliation_data)
+
+                    success = await self._email_notifier.send(
+                        recipient=notification.recipient,
+                        subject=notification.subject or f"FlowShare {period_month} Reconciliation Report Ready",
+                        body=body,
+                        metadata=notification.metadata
                     )
-
-                    # Try PDF generation if enabled
-                    if PDF_ENABLED and STORAGE_ENABLED:
-                        logger.info("Generating PDF reconciliation report")
-                        try:
-                            # Generate PDF
-                            pdf_path = await pdf_generator.generate_reconciliation_pdf(
-                                reconciliation_data,
-                                ai_summary
-                            )
-
-                            # Upload PDF to Firebase Storage
-                            period_month = reconciliation_data.get('period_month', 'Unknown').replace(' ', '_')
-                            storage_path = f"reconciliation_reports/{period_month}/{os.path.basename(pdf_path)}"
-
-                            pdf_url = storage_client.upload_file(
-                                local_path=pdf_path,
-                                storage_path=storage_path,
-                                content_type='application/pdf',
-                                public=False  # Use signed URL for security
-                            )
-
-                            # Format email with download link
-                            body = format_reconciliation_pdf_email(reconciliation_data, pdf_url)
-
-                            success = await self._email_notifier.send(
-                                recipient=notification.recipient,
-                                subject=notification.subject or f"FlowShare {period_month} Reconciliation Report",
-                                body=body,
-                                metadata=notification.metadata
-                            )
-
-                            # Clean up local PDF file
-                            if os.path.exists(pdf_path):
-                                os.remove(pdf_path)
-
-                        except Exception as e:
-                            logger.error("Failed to generate/upload PDF, falling back to inline report", error=str(e))
-                            # Fallback to inline email if PDF generation fails
-                            body = format_ai_reconciliation_report(reconciliation_data, ai_summary)
-                            success = await self._email_notifier.send(
-                                recipient=notification.recipient,
-                                subject=notification.subject or "FlowShare Reconciliation Report",
-                                body=body,
-                                metadata=notification.metadata
-                            )
-                    else:
-                        # PDF disabled - send inline report
-                        reason = "PDF generation disabled" if not PDF_ENABLED else "Storage disabled"
-                        logger.info(f"Sending inline reconciliation report ({reason})")
-                        body = format_ai_reconciliation_report(reconciliation_data, ai_summary)
-                        success = await self._email_notifier.send(
-                            recipient=notification.recipient,
-                            subject=notification.subject or "FlowShare Reconciliation Report",
-                            body=body,
-                            metadata=notification.metadata
-                        )
                 else:
                     # Regular email
                     success = await self._email_notifier.send(
