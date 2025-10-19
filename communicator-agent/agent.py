@@ -166,12 +166,29 @@ class CommunicatorAgent:
                 # Check if this is a reconciliation report (has reconciliation_data in metadata)
                 if notification.metadata and 'reconciliation_data' in notification.metadata:
                     reconciliation_data = notification.metadata.get('reconciliation_data', {})
-
-                    # Send login notification instead of full report
                     period_month = reconciliation_data.get('period_month', 'Unknown')
-                    logger.info(f"Sending reconciliation login notification for {period_month}")
 
-                    # Format email directing users to log in
+                    # Generate AI summary
+                    logger.info(f"Generating AI summary for {period_month} reconciliation")
+                    ai_summary = await ai_report_generator.generate_reconciliation_summary(
+                        reconciliation_data
+                    )
+
+                    # Save AI summary to reconciliation document
+                    reconciliation_id = reconciliation_data.get('reconciliation_id')
+                    if reconciliation_id and ai_summary:
+                        try:
+                            firestore_client.update_document(
+                                collection=config.COLLECTION_RECONCILIATIONS,
+                                doc_id=reconciliation_id,
+                                data={'ai_summary': ai_summary}
+                            )
+                            logger.info(f"Saved AI summary to reconciliation {reconciliation_id}")
+                        except Exception as e:
+                            logger.error(f"Failed to save AI summary: {e}")
+
+                    # Send login notification
+                    logger.info(f"Sending reconciliation login notification for {period_month}")
                     body = format_reconciliation_login_notification(reconciliation_data)
 
                     success = await self._email_notifier.send(
