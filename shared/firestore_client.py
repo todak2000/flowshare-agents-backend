@@ -121,6 +121,75 @@ class FirestoreClient:
         except Exception as e:
             logger.error(f"Error logging agent activity: {e}")
 
+    def query_documents_paginated(
+        self,
+        collection: str,
+        page: int = 1,
+        page_size: int = 12,
+        filters: Optional[List[tuple]] = None,
+        order_by: Optional[str] = None,
+        order_direction: str = 'DESCENDING'
+    ) -> Dict[str, Any]:
+        """
+        Query documents with pagination support
+
+        Args:
+            collection: Firestore collection name
+            page: Page number (1-indexed)
+            page_size: Number of items per page
+            filters: List of filter tuples (field, operator, value)
+            order_by: Field to order by
+            order_direction: 'ASCENDING' or 'DESCENDING'
+
+        Returns:
+            Dict with 'data', 'total', 'page', 'page_size', 'total_pages'
+        """
+        try:
+            query = self.db.collection(collection)
+
+            # Apply filters
+            if filters:
+                for field, operator, value in filters:
+                    query = query.where(field, operator, value)
+
+            # Get total count (before pagination)
+            total_docs = len(list(query.stream()))
+
+            # Apply ordering
+            if order_by:
+                direction = firestore.Query.DESCENDING if order_direction == 'DESCENDING' else firestore.Query.ASCENDING
+                query = query.order_by(order_by, direction=direction)
+
+            # Calculate offset
+            offset = (page - 1) * page_size
+
+            # Apply pagination
+            query = query.limit(page_size).offset(offset)
+
+            # Execute query
+            docs = query.stream()
+
+            results = []
+            for doc in docs:
+                data = doc.to_dict()
+                data['id'] = doc.id
+                results.append(data)
+
+            total_pages = (total_docs + page_size - 1) // page_size  # Ceiling division
+
+            return {
+                'data': results,
+                'total': total_docs,
+                'page': page,
+                'page_size': page_size,
+                'total_pages': total_pages,
+                'has_next': page < total_pages,
+                'has_prev': page > 1
+            }
+        except Exception as e:
+            logger.error(f"Error in paginated query: {e}")
+            raise
+
 
 # Singleton instance
 firestore_client = FirestoreClient()
