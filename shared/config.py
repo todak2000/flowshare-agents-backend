@@ -28,6 +28,8 @@ class Config:
     COLLECTION_NOTIFICATIONS: str = "notifications"
     COLLECTION_AGENT_LOGS: str = "agent_logs"
 
+    LOGO_URL: str = os.getenv('LOGO_URL','https://via.placeholder.com/100x100?text=FlowShare')
+
     # Agent URLs (set after deployment)
     AUDITOR_AGENT_URL: Optional[str] = os.getenv("AUDITOR_AGENT_URL")
     ACCOUNTANT_AGENT_URL: Optional[str] = os.getenv("ACCOUNTANT_AGENT_URL")
