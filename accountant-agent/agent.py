@@ -158,45 +158,25 @@ class AccountantAgent:
 
     async def _save_results(self, receipt_id: str, result: AllocationResult, execution_time: float):
         """
-        Save allocation results to Firestore (async, non-blocking)
+        Log allocation activity to Firestore (async, non-blocking)
 
-        Runs Firestore update and activity logging in parallel
+        Note: Does NOT save allocation results to terminal_receipts collection.
+        Results are returned to caller (frontend) which saves to reconciliation_runs.
+        This prevents data pollution in terminal_receipts with temp_XXX documents.
 
         Args:
-            receipt_id: Receipt identifier
+            receipt_id: Receipt identifier (may be temp_XXX for reconciliation)
             result: Allocation result
             execution_time: Execution time in milliseconds
         """
         try:
-            await asyncio.gather(
-                asyncio.to_thread(self._update_firestore, receipt_id, result),
-                asyncio.to_thread(self._log_activity, receipt_id, result, execution_time)
+            # Only log activity - don't save to terminal_receipts
+            await asyncio.to_thread(
+                self._log_activity, receipt_id, result, execution_time
             )
         except Exception as e:
-            logger.error("Failed to save results", receipt_id=receipt_id, error=str(e))
-            # Don't fail allocation if saving fails
-
-    def _update_firestore(self, receipt_id: str, result: AllocationResult) -> None:
-        """
-        Update terminal receipt in Firestore (creates if doesn't exist)
-
-        Args:
-            receipt_id: Receipt identifier
-            result: Allocation result
-        """
-        update_data = {
-            'allocations': result.allocations,
-            'total_allocated': result.total_allocated,
-            'allocation_status': 'completed' if result.validation_status else 'failed',
-            'allocated_at': result.timestamp
-        }
-
-        # Use upsert to create or update the document
-        firestore_client.upsert_document(
-            collection=config.COLLECTION_TERMINAL_RECEIPTS,
-            doc_id=receipt_id,
-            data=update_data
-        )
+            logger.error("Failed to log activity", receipt_id=receipt_id, error=str(e))
+            # Don't fail allocation if logging fails
 
     def _log_activity(self, receipt_id: str, result: AllocationResult, execution_time: float) -> None:
         """
