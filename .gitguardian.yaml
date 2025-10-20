@@ -1,0 +1,23 @@
+# GitGuardian configuration
+# This file tells GitGuardian which patterns to ignore
+
+version: 2
+
+# Ignore Firebase Storage download tokens (these are public by design for public files)
+ignored-matches:
+  - name: Firebase Storage Public URLs
+    match: firebasestorage\.googleapis\.com.*token=
+
+# Ignore placeholder/example values
+ignored-paths:
+  - "**/*.sample"
+  - "**/*.example"
+  - "**/DEMO_*.md"
+  - "**/SUBMISSION_*.md"
+  - "**/README*.md"
+
+# Ignore test files
+  - "**/__tests__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
