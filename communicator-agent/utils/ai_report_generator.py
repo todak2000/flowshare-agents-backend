@@ -48,17 +48,24 @@ class AIReportGenerator:
 **Reconciliation Period**: {period_month}
 **Total Input Volume**: {total_input:,.2f} BBL
 **Terminal Volume**: {terminal_volume:,.2f} BBL
-**Shrinkage Factor**: {shrinkage:.2f}%
+**Overall Shrinkage Factor**: {shrinkage:.2f}% (THIS IS THE TOTAL SHRINKAGE FOR THE ENTIRE OPERATION)
 
 **Partner Allocations**:
 {self._format_allocations_for_prompt(allocations)}
 
+IMPORTANT CLARIFICATIONS:
+- The "Share" percentage (e.g., 32.60%) represents each partner's ALLOCATION PERCENTAGE of the total production, NOT their percentage of shrinkage
+- Shrinkage is calculated as a TOTAL for the operation ({shrinkage:.2f}%), not per partner
+- Volume Loss (in BBL) is the actual barrels lost by each partner due to the overall shrinkage factor being applied proportionally
+- DO NOT confuse a partner's allocation percentage with their "percentage of total shrinkage" - these are completely different metrics
+
 Generate a professional executive summary in HTML format (max 300 words) that:
 1. Summarizes the reconciliation period and total volumes
-2. Highlights key findings and any notable patterns
-3. Comments on the shrinkage factor and efficiency
-4. Provides actionable insights for partners
-5. Uses professional oil & gas industry terminology
+2. Highlights each partner's ALLOCATION SHARE (their percentage of total production)
+3. Comments on the OVERALL shrinkage factor ({shrinkage:.2f}%) and what it means for the operation
+4. If discussing volume losses, mention the BBL amount lost by each partner (proportional to their share)
+5. DO NOT say things like "Partner X contributed Y% to total shrinkage" or "representing Z% of shrinkage" - those statements are incorrect
+6. Uses professional oil & gas industry terminology
 
 Format using HTML tags (<h3>, <p>, <ul>, <li>, <strong>) for structure.
 Do NOT include a title heading - start directly with the summary content.
