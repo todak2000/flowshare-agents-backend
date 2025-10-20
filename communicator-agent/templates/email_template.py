@@ -395,14 +395,19 @@ def format_ai_reconciliation_report(reconciliation_data: dict, ai_summary: str =
 def format_markdown_for_email(text: str) -> str:
     """
     Convert Markdown-like text to HTML for email display
-    
+
     Args:
         text: Text with markdown formatting
-    
+
     Returns:
         HTML formatted text
     """
     import re
+
+    # Remove markdown code blocks (```html ... ``` or ``` ... ```)
+    # This removes the wrapping backticks and language identifier
+    text = re.sub(r'```(?:html|xml|css|javascript|js)?\s*\n?', '', text)
+    text = re.sub(r'```\s*$', '', text)
 
     # Convert bold (**text** to <strong>text</strong>)
     text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)

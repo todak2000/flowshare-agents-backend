@@ -174,41 +174,33 @@ async def trigger_reconciliation(request: ReconciliationRequest, req: Request):
 
         logger.info(f"Starting notification process for {len(stakeholder_emails)} stakeholders...")
 
-        # Send notifications to all stakeholders IN PARALLEL for better performance
-        async def send_single_notification(index: int, email: str):
-            """Send notification to a single email and return result"""
-            try:
-                result = await send_notification_to_communicator(
-                    notification_id=f"notif_{request.reconciliation_id}_{index}",
-                    recipient=email,
-                    subject=f"✅ {period_month} Reconciliation Report Available",
-                    body=f"Reconciliation report for {period_month}",
-                    reconciliation_data=reconciliation_data
-                )
-                return {
-                    'email': email,
-                    'success': result.get('success', False)
-                }
-            except Exception as e:
-                logger.error(f"Failed to send notification to {email}: {e}")
-                return {
-                    'email': email,
-                    'success': False,
-                    'error': str(e)
-                }
+        # Convert stakeholder_emails set to sorted list
+        stakeholder_emails_list = sorted(list(stakeholder_emails))
 
-        # Send all notifications in parallel using asyncio.gather
-        notification_tasks = [
-            send_single_notification(index, email)
-            for index, email in enumerate(stakeholder_emails)
-        ]
-        notification_results = await asyncio.gather(*notification_tasks)
+        # Remove admin email from recipients list (will be BCC'd automatically)
+        recipients = [email for email in stakeholder_emails_list if email != DEFAULT_ADMIN_EMAIL]
 
-        successful_notifications = sum(1 for r in notification_results if r.get('success'))
-        logger.info(
-            f"Sent {successful_notifications}/{len(stakeholder_emails)} notifications successfully",
-            reconciliation_id=request.reconciliation_id
-        )
+        logger.info(f"📧 Sending ONE email to {len(recipients)} recipients (+ BCC to {DEFAULT_ADMIN_EMAIL})")
+        logger.info(f"Recipients: {recipients}")
+
+        # Send ONE email to all stakeholders with admin BCC'd
+        try:
+            result = await send_notification_to_communicator(
+                notification_id=f"notif_{request.reconciliation_id}",
+                recipient=recipients,  # Send list of all recipients
+                subject=f"✅ {period_month} Reconciliation Report Available",
+                body=f"Reconciliation report for {period_month}",
+                reconciliation_data=reconciliation_data
+            )
+
+            successful_notifications = 1 if result.get('success') else 0
+            logger.info(
+                f"Sent batch email to {len(recipients)} stakeholders successfully (BCC: {DEFAULT_ADMIN_EMAIL})",
+                reconciliation_id=request.reconciliation_id
+            )
+        except Exception as e:
+            logger.error(f"Failed to send batch notification: {e}")
+            successful_notifications = 0
 
         return {
             "success": True,
