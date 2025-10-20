@@ -1,265 +1,399 @@
 """
 Professional Email Templates for FlowShare
-Simplified and user-friendly design
+Updated with new header/footer design
 """
 import os
+import datetime
 
+from shared.config import config 
 
-def get_email_template(body_content: str, preheader: str = "") -> str:
+def get_email_template(body_content: str, preheader: str = "", show_header_right: bool = False,
+                       report_type: str = "", date_range: str = "") -> str:
     """
     Generate a professional HTML email with FlowShare branding
-    
+
     Args:
         body_content: Main content of the email (HTML string)
         preheader: Short preview text shown in email clients
-    
+        show_header_right: Whether to show the right side of header (for PDF reports)
+        report_type: Text for report type (only if show_header_right is True)
+        date_range: Date range text (only if show_header_right is True)
+
     Returns:
         Fully formatted HTML email with FlowShare branding
     """
-    import datetime
     current_year = datetime.datetime.now().year
 
-    return f"""
-<!DOCTYPE html>
+    # Get logo URL from environment variable (fallback to placeholder if not set)
+
+    # Conditional header right section
+    header_right_html = ""
+    header_title=preheader
+    if show_header_right:
+        header_title="Reconciliation Report"
+        header_right_html = f"""
+        <!-- Right side: Report Type and Date -->
+        <div class="header-right">
+          <div class="report-type">{report_type or 'Production Allocation'}</div>
+          <div class="date">{date_range}</div>
+        </div>
+        """
+
+    return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlowShare Notification</title>
-    <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowShare Notification</title>
+  <style>
+    * {{
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }}
 
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            background-color: #f5f5f5;
-        }}
+    body {{
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      color: #1f2937;
+      background-color: #f5f5f5;
+      padding: 20px;
+    }}
 
-        .email-container {{
-            max-width: 650px;
-            margin: 20px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }}
+    .email-container {{
+      max-width: 650px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }}
 
-        .header {{
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-            padding: 30px;
-            text-align: center;
-            color: white;
-        }}
+    .header {{
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      padding: 40px 30px;
+      margin: 0;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      box-sizing: border-box;
+    }}
 
-        .logo {{
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }}
+    .header::before {{
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+    }}
 
-        .logo-subtitle {{
-            font-size: 13px;
-            opacity: 0.9;
-        }}
+    .header-content {{
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 100%;
+      flex-wrap: wrap;
+      gap: 20px;
+    }}
 
-        .content {{
-            padding: 40px 35px;
-        }}
+    .header-left {{
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }}
 
-        .content h1 {{
-            color: #1e293b;
-            font-size: 24px;
-            margin-bottom: 10px;
-        }}
+    .logo-img {{
+      width: 100px;
+      height: 100px;
+      background: transparent;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }}
 
-        .content p {{
-            color: #475569;
-            margin-bottom: 20px;
-            font-size: 15px;
-        }}
+    .header-text {{
+      text-align: left;
+    }}
 
-        .info-section {{
-            background-color: #f8fafc;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 25px 0;
-        }}
+    .company-name {{
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 5px;
+      letter-spacing: -0.5px;
+    }}
 
-        .info-row {{
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }}
+    .period {{
+      font-size: 16px;
+      opacity: 0.9;
+      font-weight: 500;
+    }}
 
-        .info-row:last-child {{
-            border-bottom: none;
-        }}
+    .header-right {{
+      text-align: right;
+    }}
 
-        .info-label {{
-            color: #64748b;
-            font-size: 14px;
-        }}
+    .report-type {{
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.8;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }}
 
-        .info-value {{
-            color: #1e293b;
-            font-weight: 600;
-            font-size: 14px;
-        }}
+    .date {{
+      font-size: 13px;
+      opacity: 0.9;
+    }}
 
-        .data-table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin: 25px 0;
-            font-size: 14px;
-        }}
+    .content {{
+      padding: 40px 35px;
+    }}
 
-        .data-table thead {{
-            background-color: #1e293b;
-            color: white;
-        }}
+    .content h1 {{
+      color: #1e293b;
+      font-size: 24px;
+      margin-bottom: 10px;
+    }}
 
-        .data-table th {{
-            padding: 14px 12px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }}
+    .content h2 {{
+      color: #1e293b;
+      font-size: 18px;
+      margin: 30px 0 15px 0;
+    }}
 
-        .data-table th.right {{
-            text-align: right;
-        }}
+    .content p {{
+      color: #475569;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }}
 
-        .data-table td {{
-            padding: 14px 12px;
-            border-bottom: 1px solid #e2e8f0;
-            color: #334155;
-        }}
+    .info-section {{
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+    }}
 
-        .data-table td.right {{
-            text-align: right;
-        }}
+    .info-row {{
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }}
 
-        .data-table tbody tr:hover {{
-            background-color: #f8fafc;
-        }}
+    .info-row:last-child {{
+      border-bottom: none;
+    }}
 
-        .data-table tbody tr:last-child td {{
-            border-bottom: none;
-        }}
+    .info-label {{
+      color: #64748b;
+      font-size: 14px;
+    }}
 
-        .partner-name {{
-            font-weight: 600;
-            color: #1e293b;
-        }}
+    .info-value {{
+      color: #1e293b;
+      font-weight: 600;
+      font-size: 14px;
+    }}
 
-        .positive {{
-            color: #10b981;
-            font-weight: 500;
-        }}
+    .data-table {{
+      width: 100%;
+      border-collapse: collapse;
+      margin: 25px 0;
+      font-size: 14px;
+    }}
 
-        .negative {{
-            color: #ef4444;
-            font-weight: 500;
-        }}
+    .data-table thead {{
+      background-color: #1e293b;
+      color: white;
+    }}
 
-        .badge {{
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }}
+    .data-table th {{
+      padding: 14px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }}
 
-        .badge-green {{
-            background-color: #d1fae5;
-            color: #065f46;
-        }}
+    .data-table th.right {{
+      text-align: right;
+    }}
 
-        .badge-yellow {{
-            background-color: #fef3c7;
-            color: #92400e;
-        }}
+    .data-table td {{
+      padding: 14px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #334155;
+    }}
 
-        .ai-summary {{
-            background-color: #eff6ff;
-            border-left: 4px solid #3b82f6;
-            padding: 20px;
-            margin: 25px 0;
-            border-radius: 4px;
-        }}
+    .data-table td.right {{
+      text-align: right;
+    }}
 
-        .ai-summary h3 {{
-            color: #1e40af;
-            font-size: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-        }}
+    .data-table tbody tr:hover {{
+      background-color: #f8fafc;
+    }}
 
-        .ai-summary p {{
-            color: #1e293b;
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }}
+    .data-table tbody tr:last-child td {{
+      border-bottom: none;
+    }}
 
-        .footer {{
-            background-color: #f8fafc;
-            padding: 25px 35px;
-            text-align: center;
-            border-top: 1px solid #e2e8f0;
-        }}
+    .partner-name {{
+      font-weight: 600;
+      color: #1e293b;
+    }}
 
-        .footer p {{
-            color: #64748b;
-            font-size: 13px;
-            margin: 5px 0;
-        }}
+    .positive {{
+      color: #10b981;
+      font-weight: 500;
+    }}
 
-        @media only screen and (max-width: 600px) {{
-            .email-container {{
-                margin: 10px;
-            }}
-            
-            .content {{
-                padding: 25px 20px;
-            }}
+    .negative {{
+      color: #ef4444;
+      font-weight: 500;
+    }}
 
-            .data-table {{
-                font-size: 12px;
-            }}
+    .badge {{
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }}
 
-            .data-table th,
-            .data-table td {{
-                padding: 10px 8px;
-            }}
-        }}
-    </style>
+    .badge-green {{
+      background-color: #d1fae5;
+      color: #065f46;
+    }}
+
+    .badge-yellow {{
+      background-color: #fef3c7;
+      color: #92400e;
+    }}
+
+    .ai-summary {{
+      background-color: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 20px;
+      margin: 25px 0;
+      border-radius: 4px;
+    }}
+
+    .ai-summary h3 {{
+      color: #1e40af;
+      font-size: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+    }}
+
+    .ai-summary p {{
+      color: #1e293b;
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }}
+
+    .footer {{
+      background-color: #f8fafc;
+      padding: 25px 35px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }}
+
+    .footer p {{
+      color: #64748b;
+      font-size: 13px;
+      margin: 5px 0;
+    }}
+
+    @media only screen and (max-width: 600px) {{
+      .email-container {{
+        margin: 10px;
+      }}
+      
+      .content {{
+        padding: 25px 20px;
+      }}
+
+      .header {{
+        padding: 25px 20px;
+      }}
+
+      .header-content {{
+        flex-direction: column;
+        text-align: center;
+      }}
+
+      .header-left {{
+        flex-direction: column;
+      }}
+
+      .header-text {{
+        text-align: center;
+      }}
+
+      .header-right {{
+        text-align: center;
+      }}
+
+      .company-name {{
+        font-size: 24px;
+      }}
+
+      .data-table {{
+        font-size: 12px;
+      }}
+
+      .data-table th,
+      .data-table td {{
+        padding: 10px 8px;
+      }}
+    }}
+  </style>
 </head>
 <body>
-    <div style="display: none; max-height: 0px; overflow: hidden;">
-        {preheader}
-    </div>
+  <div style="display: none; max-height: 0px; overflow: hidden;">
+    {preheader}
+  </div>
 
-    <div class="email-container">
-
-
-        <div class="content">
-            {body_content}
+  <div class="email-container">
+    <!-- Header Section -->
+    <div class="header">
+      <div class="header-content">
+        <!-- Left side: Logo and Company Info -->
+        <div class="header-left">
+          <div class="logo-img">
+            <img src="{config.LOGO_URL}"
+                 style="width: 100%; height: 100%; object-fit: contain;"
+                 alt="FlowShare Logo"/>
+          </div>
+          <div class="header-text">
+            <div class="company-name">FlowShare</div>
+            <div class="period">{header_title}</div>
+          </div>
         </div>
 
-        <div class="footer">
-            <p><strong>FlowShare</strong> - Automated Production Allocation Platform</p>
-            <p>© {current_year} FlowShare. All rights reserved.</p>
-        </div>
+        {header_right_html}
+      </div>
     </div>
+
+    <div class="content">
+      {body_content}
+    </div>
+
+    <div class="footer">
+      <p><strong>FlowShare</strong> - Automated Production Allocation Platform</p>
+      <p>© {current_year} FlowShare. All rights reserved.</p>
+    </div>
+  </div>
 </body>
 </html>
 """
@@ -329,7 +463,7 @@ def format_ai_reconciliation_report(reconciliation_data: dict, ai_summary: str =
             </div>
         </div>
 
-        <h2 style="color: #1e293b; font-size: 18px; margin: 30px 0 15px 0;">📊 Volume Summary</h2>
+        <h2>📊 Volume Summary</h2>
         
         <div class="info-section">
             <div class="info-row">
@@ -358,7 +492,7 @@ def format_ai_reconciliation_report(reconciliation_data: dict, ai_summary: str =
             </div>
         </div>
 
-        <h2 style="color: #1e293b; font-size: 18px; margin: 30px 0 15px 0;">👥 Partner Allocations</h2>
+        <h2>👥 Partner Allocations</h2>
         
         <table class="data-table">
             <thead>
@@ -389,7 +523,13 @@ def format_ai_reconciliation_report(reconciliation_data: dict, ai_summary: str =
         </p>
     """
 
-    return get_email_template(body, f"Reconciliation Report - {period_month}")
+    return get_email_template(
+        body, 
+        f"Reconciliation Report - {period_month}",
+        show_header_right=True,
+        report_type="Production Allocation",
+        date_range=f"{period_start} - {period_end}"
+    )
 
 
 def format_markdown_for_email(text: str) -> str:
@@ -404,18 +544,17 @@ def format_markdown_for_email(text: str) -> str:
     """
     import re
 
-    # Remove markdown code blocks (```html ... ``` or ``` ... ```)
-    # This removes the wrapping backticks and language identifier
+    # Remove markdown code blocks
     text = re.sub(r'```(?:html|xml|css|javascript|js)?\s*\n?', '', text)
     text = re.sub(r'```\s*$', '', text)
 
-    # Convert bold (**text** to <strong>text</strong>)
+    # Convert bold
     text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)
 
-    # Convert headers (## Header to <h4>Header</h4>)
+    # Convert headers
     text = re.sub(r'^##\s+(.+)$', r'<h4 style="color: #1e293b; margin-top: 15px; margin-bottom: 8px; font-size: 15px;">\1</h4>', text, flags=re.MULTILINE)
 
-    # Convert bullet points (* item to <li>item</li>)
+    # Convert bullet points
     lines = text.split('\n')
     formatted_lines = []
     in_list = False
@@ -498,7 +637,6 @@ def format_reconciliation_login_notification(reconciliation_data: dict, login_ur
         login_url = f"{frontend_url}/onboarding/login"
 
     body = f"""
-        
         <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 6px;">
             <p style="margin: 0; color: #1e40af; font-size: 14px;">
                 <strong>🔐 Secure Access Required</strong><br>
@@ -534,7 +672,6 @@ def format_generic_notification(title: str, message: str, action_url: str = "", 
     Returns:
         A fully formatted HTML email string.
     """
-    # Generate the action button HTML only if an action_url is provided
     action_button_html = ""
     if action_url:
         action_button_html = f"""
@@ -545,10 +682,8 @@ def format_generic_notification(title: str, message: str, action_url: str = "", 
             </div>
         """
 
-    # Convert the message from markdown to HTML for email compatibility
     formatted_message = format_markdown_for_email(message)
 
-    # Construct the main body of the email
     body_content = f"""
         <h1>{title}</h1>
         
@@ -561,5 +696,4 @@ def format_generic_notification(title: str, message: str, action_url: str = "", 
         </p>
     """
 
-    # Use the main template function to wrap the content with the header and footer
     return get_email_template(body_content, preheader=title)
