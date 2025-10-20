@@ -2,7 +2,7 @@
 Pydantic models for data validation
 """
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
 from enum import Enum
 
@@ -128,7 +128,7 @@ class Notification(BaseModel):
     """Notification for stakeholders (Communicator Agent)"""
     id: Optional[str] = None
     type: NotificationType  # email, sms, webhook
-    recipient: str  # email address, phone number, or webhook URL
+    recipient: Union[str, List[str]]  # email address(es), phone number, or webhook URL - supports batch emails
     subject: Optional[str] = None  # for email
     body: str  # message content or payload
     status: NotificationStatus = NotificationStatus.PENDING

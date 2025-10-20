@@ -275,10 +275,12 @@ class CommunicatorAgent:
             # If document doesn't exist, create it
             if "No document to update" in str(e):
                 logger.info("Document doesn't exist, creating new notification document")
+                # Convert recipient to list for Firestore if it's a list
+                recipient_for_storage = notification.recipient if isinstance(notification.recipient, list) else [notification.recipient]
                 create_data = {
                     'id': notification_id,
                     'type': notification.type,
-                    'recipient': notification.recipient,
+                    'recipient': recipient_for_storage,  # Always store as list for consistency
                     'subject': notification.subject,
                     'body': notification.body[:500] if notification.body else None,  # Truncate body
                     'metadata': notification.metadata,
@@ -301,16 +303,27 @@ class CommunicatorAgent:
             notification: Notification object
             execution_time: Execution time in milliseconds
         """
-        # Sanitize recipient (hide middle part of email)
+        # Sanitize recipient (hide middle part of email) - handle both str and List[str]
         recipient = notification.recipient
-        if '@' in recipient:
-            local, domain = recipient.split('@')
-            if len(local) > 3:
-                sanitized_recipient = f"{local[:2]}***{local[-1]}@{domain}"
+
+        def sanitize_email(email: str) -> str:
+            """Sanitize a single email address"""
+            if '@' in email:
+                local, domain = email.split('@')
+                if len(local) > 3:
+                    return f"{local[:2]}***{local[-1]}@{domain}"
+                else:
+                    return f"{local[0]}***@{domain}"
             else:
-                sanitized_recipient = f"{local[0]}***@{domain}"
+                return f"{email[:3]}***" if len(email) > 3 else "***"
+
+        # Handle list or string recipient
+        if isinstance(recipient, list):
+            sanitized_recipient = f"{len(recipient)} recipients: " + ", ".join([sanitize_email(r) for r in recipient[:3]])
+            if len(recipient) > 3:
+                sanitized_recipient += f" (+{len(recipient) - 3} more)"
         else:
-            sanitized_recipient = f"{recipient[:3]}***"
+            sanitized_recipient = sanitize_email(recipient)
 
         # Determine action details based on metadata
         action_details = "Email notification sent"
