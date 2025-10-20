@@ -5,23 +5,26 @@ Updated with new header/footer design
 import os
 import datetime
 
+from shared.config import config 
 
-def get_email_template(body_content: str, preheader: str = "", show_header_right: bool = False, 
+def get_email_template(body_content: str, preheader: str = "", show_header_right: bool = False,
                        report_type: str = "", date_range: str = "") -> str:
     """
     Generate a professional HTML email with FlowShare branding
-    
+
     Args:
         body_content: Main content of the email (HTML string)
         preheader: Short preview text shown in email clients
         show_header_right: Whether to show the right side of header (for PDF reports)
         report_type: Text for report type (only if show_header_right is True)
         date_range: Date range text (only if show_header_right is True)
-    
+
     Returns:
         Fully formatted HTML email with FlowShare branding
     """
     current_year = datetime.datetime.now().year
+
+    # Get logo URL from environment variable (fallback to placeholder if not set)
 
     # Conditional header right section
     header_right_html = ""
@@ -368,8 +371,8 @@ def get_email_template(body_content: str, preheader: str = "", show_header_right
         <!-- Left side: Logo and Company Info -->
         <div class="header-left">
           <div class="logo-img">
-            <img src="https://firebasestorage.googleapis.com/v0/b/back-allocation.firebasestorage.app/o/logo.webp?alt=media&token=a14f4e59-df8d-41bd-ae0c-3a1224c86033" 
-                 style="width: 100%; height: 100%; object-fit: contain;" 
+            <img src="{config.LOGO_URL}"
+                 style="width: 100%; height: 100%; object-fit: contain;"
                  alt="FlowShare Logo"/>
           </div>
           <div class="header-text">
