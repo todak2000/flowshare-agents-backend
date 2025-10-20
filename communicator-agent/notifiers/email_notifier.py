@@ -46,7 +46,7 @@ class EmailNotifier:
 
     async def send(
         self,
-        recipient: str,
+        recipient: str | list[str],
         subject: str,
         body: str,
         metadata: Optional[Dict[str, Any]] = None
@@ -55,7 +55,7 @@ class EmailNotifier:
         Send email notification via ZeptoMail API
 
         Args:
-            recipient: Email address of recipient
+            recipient: Email address(es) of recipient(s) - single string or list
             subject: Email subject
             body: Email body (plain text or HTML)
             metadata: Optional metadata (e.g., cc, bcc, reply_to)
@@ -97,6 +97,9 @@ class EmailNotifier:
                 # Wrap in professional template
                 body = format_generic_notification(subject, body_html)
 
+            # Handle both single recipient (string) and multiple recipients (list)
+            recipients_list = [recipient] if isinstance(recipient, str) else recipient
+
             # Prepare ZeptoMail payload
             payload = {
                 "from": {
@@ -106,9 +109,10 @@ class EmailNotifier:
                 "to": [
                     {
                         "email_address": {
-                            "address": recipient
+                            "address": email
                         }
                     }
+                    for email in recipients_list
                 ],
                 "subject": subject,
                 "htmlbody": body  # Always send HTML now with professional template
@@ -127,7 +131,7 @@ class EmailNotifier:
                 bcc_list.extend(metadata['bcc'])
 
             # Add admin email if not already in recipients or BCC
-            if self.admin_bcc and self.admin_bcc not in bcc_list and self.admin_bcc != recipient:
+            if self.admin_bcc and self.admin_bcc not in bcc_list and self.admin_bcc not in recipients_list:
                 bcc_list.append(self.admin_bcc)
 
             if bcc_list:
