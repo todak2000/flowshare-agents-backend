@@ -5,7 +5,6 @@ env
 firebase_credentials.json
 *-firebase-adminsdk-*.json
 *.sh
-*.md
 venv/
 tests/
 note.txt
