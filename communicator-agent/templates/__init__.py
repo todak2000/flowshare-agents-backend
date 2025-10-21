@@ -1,8 +1,6 @@
 """Email templates for FlowShare notifications"""
 from .email_template import (
     get_email_template,
-    format_ai_reconciliation_report,
-    format_reconciliation_pdf_email,
     format_reconciliation_login_notification,
     format_generic_notification,
     format_markdown_for_email
@@ -10,8 +8,6 @@ from .email_template import (
 
 __all__ = [
     'get_email_template',
-    'format_ai_reconciliation_report',
-    'format_reconciliation_pdf_email',
     'format_reconciliation_login_notification',
     'format_generic_notification',
     'format_markdown_for_email'

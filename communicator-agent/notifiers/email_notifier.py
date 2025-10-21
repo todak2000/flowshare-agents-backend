@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from shared.logger import logger
 from typing import Dict, Any, Optional
 import httpx
-from templates import get_email_template, format_generic_notification
+from templates import format_generic_notification
 
 
 class EmailNotifier:
@@ -82,10 +82,26 @@ class EmailNotifier:
                 return False
 
             # Check if body is already a full HTML template
-            is_full_html = '<html>' in body.lower() and '</html>' in body.lower()
+            # Templates like format_reconciliation_login_notification, format_ai_reconciliation_report,
+            # and format_reconciliation_pdf_email already use get_email_template() internally,
+            # so they should NOT be wrapped again with format_generic_notification to avoid double headers/footers
+            body_stripped = body.strip()
+            is_full_html_template = (
+                body_stripped.startswith('<!DOCTYPE html>') or
+                body_stripped.startswith('<!doctype html>') or
+                (body_stripped.startswith('<html') and '</html>' in body_stripped.lower())
+            )
+
+            logger.info(
+                "Email body template check",
+                is_full_html=is_full_html_template,
+                starts_with=body_stripped[:50] if len(body_stripped) > 50 else body_stripped,
+                subject=subject
+            )
 
             # If it's plain text or partial HTML, wrap it in professional template
-            if not is_full_html:
+            # But DO NOT wrap if it's already a full HTML document (to avoid double headers/footers)
+            if not is_full_html_template:
                 # Convert plain text to HTML paragraphs
                 if '<' not in body:
                     # Plain text - convert to HTML
@@ -95,7 +111,7 @@ class EmailNotifier:
                     body_html = body
 
                 # Wrap in professional template
-                body = format_generic_notification(subject, body_html)
+                body = format_generic_notification(subject, body_html) 
 
             # Handle both single recipient (string) and multiple recipients (list)
             recipients_list = [recipient] if isinstance(recipient, str) else recipient
@@ -175,4 +191,4 @@ class EmailNotifier:
                 error=str(e),
                 error_type=type(e).__name__
             )
-            return False
+            return False 

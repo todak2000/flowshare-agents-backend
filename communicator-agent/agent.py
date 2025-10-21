@@ -30,7 +30,7 @@ except Exception as e:
 
 # Import agent-specific notifiers
 from notifiers import EmailNotifier, SMSNotifier, WebhookNotifier
-from templates import format_ai_reconciliation_report, format_reconciliation_pdf_email, format_reconciliation_login_notification
+from templates import format_reconciliation_login_notification
 from utils import ai_report_generator
 
 # Optional PDF generation (requires system libraries)
