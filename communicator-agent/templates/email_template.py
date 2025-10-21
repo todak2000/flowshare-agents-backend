@@ -113,8 +113,6 @@ def get_email_template(body_content: str, preheader: str = "", show_header_right
       height: 100px;
       background: transparent;
       border-radius: 12px;
-      padding: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }}
 
     .header-text {{
@@ -450,8 +448,7 @@ def format_ai_reconciliation_report(reconciliation_data: dict, ai_summary: str =
         """
 
     body = f"""
-        <h1>Reconciliation Report - {period_start} - {period_end}</h1>
-        
+
         <div class="info-section">
             <div class="info-row">
                 <span class="info-label">Period:</span>
@@ -597,7 +594,6 @@ def format_reconciliation_pdf_email(reconciliation_data: dict, pdf_download_url:
     period_end = reconciliation_data.get('period_end', '')
 
     body = f"""
-        <h1>📊 {period_month} Reconciliation Report Ready</h1>
         
         <p>Your detailed reconciliation report for <strong>{period_start} to {period_end}</strong> is now available.</p>
 
@@ -685,7 +681,6 @@ def format_generic_notification(title: str, message: str, action_url: str = "", 
     formatted_message = format_markdown_for_email(message)
 
     body_content = f"""
-        <h1>{title}</h1>
         
         {formatted_message}
         
